@@ -1,0 +1,46 @@
+# GoalPro 提交 Skill 源文件，不提交本机运行状态。
+
+# Graphify 生成产物
+graphify-out/
+
+# Meta_Kim 本地运行状态和缓存
+.meta-kim/
+
+# Codex 本机配置、hook、排障脚本通常含绝对路径，不提交
+.codex/
+
+# Python 本地运行产物
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.venv/
+venv/
+env/
+
+# Node 本地依赖和构建产物
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+build/
+.turbo/
+.next/
+
+# 本机密钥和环境文件
+.env
+.env.*
+!.env.example
+*.local
+
+# 编辑器和系统杂项
+.DS_Store
+Thumbs.db
+desktop.ini
+.idea/
+.vscode/

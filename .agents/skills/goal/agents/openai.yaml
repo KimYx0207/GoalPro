@@ -1,0 +1,6 @@
+interface:
+  display_name: "Goal Contract"
+  short_description: "把模糊需求压缩成可执行、可验证、低 Token 的 Goal Contract"
+  default_prompt: "使用 $goal，把这个请求整理成可执行、可验证、低 Token 的 Goal Contract。"
+policy:
+  allow_implicit_invocation: true

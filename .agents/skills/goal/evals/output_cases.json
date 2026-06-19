@@ -1,0 +1,30 @@
+[
+  {
+    "id": "must_include_done",
+    "assertion": "输出必须定义可观察的完成标准，不能只列任务。"
+  },
+  {
+    "id": "must_include_context",
+    "assertion": "当用户提到文件、仓库、文档、日志或截图时，输出必须说明先读哪些上下文。"
+  },
+  {
+    "id": "must_separate_non_goals",
+    "assertion": "模糊或宽泛任务必须区分 Scope 和 Non-goals。"
+  },
+  {
+    "id": "must_include_pause_conditions",
+    "assertion": "输出必须说明遇到会改变路线、权限、风险或验收的情况时何时暂停。"
+  },
+  {
+    "id": "must_not_overclaim",
+    "assertion": "输出不能把命令成功等同于用户目标完成。"
+  },
+  {
+    "id": "must_reduce_token_waste",
+    "assertion": "输出必须删除套话和装饰流程，把 Token 用在意图、边界、标准和验证上。"
+  },
+  {
+    "id": "must_state_field_standards",
+    "assertion": "关键字段必须有可判断的合格标准。"
+  }
+]
