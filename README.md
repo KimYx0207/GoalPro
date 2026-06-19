@@ -18,7 +18,7 @@
 
 ## 简介
 
-**GoalPro** 是一个给 Codex 和 Claude Code 共用的 `goal` Skill。
+**GoalPro** 是一个给 Codex 和 Claude Code 共用的 `goalpro` Skill。
 
 它要解决的问题很直接：用户给 Agent 的任务常常是模糊的、情绪化的、战略标准不清的。模型如果直接执行，很容易过度规划、乱读上下文、先改后想、命令跑通就假装完成。
 
@@ -120,8 +120,8 @@ Stop conditions:
 
 GoalPro 同时支持 Claude Code 和 Codex。
 
-- `.claude/skills/goal/` 用于 Claude Code。
-- `.agents/skills/goal/` 用于 Codex。
+- `.claude/skills/goalpro/` 用于 Claude Code。
+- `.agents/skills/goalpro/` 用于 Codex。
 
 ### Claude Code 个人级安装
 
@@ -129,14 +129,14 @@ PowerShell：
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:USERPROFILE\.claude\skills" | Out-Null
-Copy-Item -Recurse -Force ".claude\skills\goal" "$env:USERPROFILE\.claude\skills\goal"
+Copy-Item -Recurse -Force ".claude\skills\goalpro" "$env:USERPROFILE\.claude\skills\goalpro"
 ```
 
 Bash：
 
 ```bash
 mkdir -p ~/.claude/skills
-cp -R .claude/skills/goal ~/.claude/skills/goal
+cp -R .claude/skills/goalpro ~/.claude/skills/goalpro
 ```
 
 ### Codex 个人级安装
@@ -145,14 +145,14 @@ PowerShell：
 
 ```powershell
 New-Item -ItemType Directory -Force "$env:USERPROFILE\.agents\skills" | Out-Null
-Copy-Item -Recurse -Force ".agents\skills\goal" "$env:USERPROFILE\.agents\skills\goal"
+Copy-Item -Recurse -Force ".agents\skills\goalpro" "$env:USERPROFILE\.agents\skills\goalpro"
 ```
 
 Bash：
 
 ```bash
 mkdir -p ~/.agents/skills
-cp -R .agents/skills/goal ~/.agents/skills/goal
+cp -R .agents/skills/goalpro ~/.agents/skills/goalpro
 ```
 
 ### 项目级安装
@@ -161,19 +161,21 @@ cp -R .agents/skills/goal ~/.agents/skills/goal
 
 ```text
 目标项目/
-├── .claude/skills/goal/   # Claude Code
-└── .agents/skills/goal/   # Codex
+├── .claude/skills/goalpro/   # Claude Code
+└── .agents/skills/goalpro/   # Codex
 ```
 
-## 触发词
+## Skill 名称与触发
 
-Skill 名称是 `goal`。
+Skill 名称是 `goalpro`。
+
+这里不用 `goal`，是为了避免和用户口头说的 goal、Goal Contract 字段，以及 slash command 语义产生混淆。Claude Code 中 Skill 可通过 `/skill-name` 调用，因此本 Skill 的直接入口是 `/goalpro`；`/goal` 不是本项目 Skill 名。
 
 常见触发方式：
 
 - `写一个高质量 goal`
 - `帮我优化这个任务提示词`
-- `把这个需求变成 Codex /goal`
+- `把这个需求变成可执行的 Goal Contract`
 - `给 Claude Code 写执行任务`
 - `明确 done when / success criteria`
 - `先 deep research 再定战略`
@@ -186,7 +188,7 @@ Skill 名称是 `goal`。
 |---|---|---|
 | **模糊需求** | 放大真实意图、定义成败标准 | Goal Contract |
 | **战略任务** | Deep Research、证据地图、反证 | Research-backed Goal Contract |
-| **代码执行** | 先读上下文、分片执行、验证 | Codex `/goal` 或 Claude Code 任务 |
+| **代码执行** | 先读上下文、分片执行、验证 | Codex 执行提示词或 Claude Code 任务 |
 | **大改/重构** | Inventory、影响面、测试入口 | 分片计划和暂停条件 |
 | **修复跑偏** | 找旧目标错位点、重写边界 | 修正版 Goal Contract |
 | **验收收尾** | 区分结构检查、本地验证、人工验收 | 最终报告标准 |
@@ -336,16 +338,14 @@ flowchart LR
 ## 文件结构
 
 ```text
-AGENTS.md                         # Codex 项目说明
-CLAUDE.md                         # Claude Code 项目说明
 README.md                         # 中文项目页
 docs/images/                      # 联系二维码和收款码
-.agents/skills/goal/              # Codex 使用的 goal Skill
+.agents/skills/goalpro/           # Codex 使用的 goalpro Skill
 ├── SKILL.md
 └── references/
     ├── examples.md
     └── source-rules.md
-.claude/skills/goal/              # Claude Code 使用的 goal Skill
+.claude/skills/goalpro/           # Claude Code 使用的 goalpro Skill
 ├── SKILL.md
 └── references/
     ├── examples.md
@@ -375,7 +375,7 @@ docs/images/                      # 联系二维码和收款码
 
 ## 延伸阅读
 
-- [Codex goal Skill](.agents/skills/goal/SKILL.md)
-- [Claude Code goal Skill](.claude/skills/goal/SKILL.md)
-- [方法依据](.agents/skills/goal/references/source-rules.md)
-- [示例校准](.agents/skills/goal/references/examples.md)
+- [Codex goalpro Skill](.agents/skills/goalpro/SKILL.md)
+- [Claude Code goalpro Skill](.claude/skills/goalpro/SKILL.md)
+- [方法依据](.agents/skills/goalpro/references/source-rules.md)
+- [示例校准](.agents/skills/goalpro/references/examples.md)

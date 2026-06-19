@@ -1,6 +1,6 @@
 ---
-name: goal
-description: 放大并锁定用户真实意图，把模糊、战略性、多步骤或证据不足的请求转成可执行、可验证的 Goal Contract。用户要求写 goal、优化提示词、明确 done/success criteria、做 deep research 后定战略、准备 Codex /goal、准备 Claude Code 任务、修复跑偏计划时使用。
+name: goalpro
+description: 当用户要把模糊、战略性、多步骤、证据不足或容易跑偏的请求，整理成可执行、可验证、可暂停的 Goal Contract 时使用。适用于写 goal、优化任务提示词、明确 done/success criteria、deep research 后定战略、大改前 inventory、修复跑偏计划、为 Codex 或 Claude Code 准备执行任务。
 ---
 
 # Goal Contract

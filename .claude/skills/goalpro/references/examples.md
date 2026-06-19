@@ -58,7 +58,7 @@ Final report:
 输入：
 
 ```text
-搜索全网，帮我写一个高质量 goal Skill，要支持 Codex 和 Claude Code，必须能分析真实意图并执行好。
+搜索全网，帮我写一个高质量 goalpro Skill，要支持 Codex 和 Claude Code，必须能分析真实意图并执行好。
 ```
 
 合格输出必须先声明研究门槛：
@@ -68,7 +68,7 @@ Research required:
 这是战略型 Skill 设计任务，依赖当前 Codex / Claude Code / Agent Skills / deep research 最佳实践。没有 deep research 只能给草案，不能给最终战略。
 
 Research question:
-判断 goal Skill 应该如何同时满足 Codex / Claude Code 触发、战略意图放大、deep research、输出位置和验证要求。
+判断 goalpro Skill 应该如何同时满足 Codex / Claude Code 触发、战略意图放大、deep research、输出位置和验证要求。
 
 Subquestions:
 1. 官方文档如何定义 goal / skill 的触发与完成标准？
@@ -101,7 +101,7 @@ medium-high。官方文档和本地项目证据支持核心规则；社区信号
 
 Research-backed Goal Contract:
 Goal:
-重建 goal Skill，使它先放大真实意图和战略标准，再生成 Codex / Claude Code 可执行、可验证的 Goal Contract。
+重建 goalpro Skill，使它先放大真实意图和战略标准，再生成 Codex / Claude Code 可执行、可验证的 Goal Contract。
 
 Intent:
 解决 agent 接到模糊任务后跑偏、过度计划、假完成的问题；不是追求短提示词，而是追求战略判断正确。
@@ -287,7 +287,7 @@ Pause if:
 ## Claude Code 任务提示词示例
 
 ```markdown
-使用 goal Skill，把下面请求整理成可执行任务；目标清楚后再实现。
+使用 goalpro Skill，把下面请求整理成可执行任务；目标清楚后再实现。
 
 先读 `CLAUDE.md` 和用户点名文件。若请求依赖外部事实、战略判断或高质量研究，先做 deep research 并给证据地图；若存在会改变范围、风险或验收的多条路线，先通过原生提问界面问我。
 
