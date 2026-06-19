@@ -151,6 +151,71 @@ Stop conditions:
 - 明确删掉了哪些工作。
 - 如果旧版把次级目标当核心目标，必须改回用户真实意图。
 
+## 聊天窗口直接输出
+
+输入：
+
+```text
+用这套 skill，帮我做个目标，优化这个 skill
+```
+
+输出位置必须是聊天窗口，不创建文件：
+
+````markdown
+下面是可直接复制的 goal 提示词：
+
+```markdown
+Goal:
+优化 GoalPro 的 `goal` Skill，使它更稳定地把模糊、战略性、多步骤或证据不足的请求转成可执行、可验证、可暂停的 Goal Contract。
+
+Intent:
+用户要的是一份能直接复制给 Codex 或 Claude Code 的目标提示词，不是项目文件。默认在聊天窗口输出，除非用户明确要求保存或提交。
+
+Strategic outcome:
+后续优化能围绕意图完成度、成败标准、证据标准、输出位置和验证规则推进，而不是凭感觉改文案。
+
+Decision standard:
+用户体验 > 意图完成度 > 成败可判 > 证据质量 > 执行约束 > 表达经济。
+
+Execution policy:
+只在聊天窗口输出 fenced `markdown` 代码块；不创建文件、不提交 git。
+
+Verification:
+用户能直接复制这段提示词使用；提示词包含目标、意图、标准、执行策略和验证。
+```
+````
+
+## 文件加聊天双输出
+
+输入：
+
+```text
+把这个目标保存到 docs/goals/optimize-goal-skill.md，也在聊天里给我一份可复制版本。
+```
+
+输出必须同时满足：
+
+- 写入用户指定文件，或使用 `docs/goals/<topic>.md`。
+- 聊天窗口同步输出同一份 fenced `markdown` 代码块。
+- 最后说明文件路径。
+
+````markdown
+已写入：`docs/goals/optimize-goal-skill.md`
+
+聊天窗口可复制版本：
+
+```markdown
+Goal:
+[完整 Goal Contract 内容]
+
+Intent:
+[完整 Intent 内容]
+
+Verification:
+[完整 Verification 内容]
+```
+````
+
 ## Codex `/goal` 示例
 
 ```markdown
