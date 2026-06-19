@@ -9,7 +9,7 @@
 - Codex：好 goal 必须包含目标、上下文、限制和 done-when；`/goal` 要有具体结果或测试标准。
 - Claude Code：持久项目事实放 `CLAUDE.md`；Skill 用于重复流程；只有并行或隔离上下文有价值时才用 subagent。
 - Anthropic agent patterns：routing、orchestrator-workers、evaluator-optimizer、parallelization 都要满足适用条件，不能为了显得完整乱加。
-- Agent evals：把结果、过程、工具选择、工具调用、任务遵守、意图识别、最终状态分开评估。
+- Agent 评测思想：把结果、过程、工具选择、工具调用、任务遵守、意图识别、最终状态分开评估。
 - Spec-driven development：先写 what / why，再写 how；目标和验收标准比执行步骤更重要。
 - Meta_Kim：Critical -> Fetch -> Thinking -> Execution -> Review -> Verification；先取证再定路线；结构检查不能冒充用户目标完成。
 
@@ -32,7 +32,7 @@
 - Claude Code skills: https://docs.anthropic.com/en/docs/claude-code/skills
 - Claude Code subagents: https://docs.anthropic.com/en/docs/claude-code/sub-agents
 - Anthropic Building Effective Agents: https://www.anthropic.com/engineering/building-effective-agents
-- Anthropic agent evals: https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
+- Anthropic agent evaluation: https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
 - Microsoft agent evaluators: https://learn.microsoft.com/en-us/azure/foundry/concepts/evaluation-evaluators/agent-evaluators
 - Addy Osmani on AI-agent specs: https://addyosmani.com/blog/good-spec/
 - Martin Fowler on spec-driven development: https://martinfowler.com/articles/exploring-gen-ai/sdd-3-tools.html

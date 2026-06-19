@@ -81,7 +81,6 @@ Final report:
 
 - 方法依据：读 `references/source-rules.md`。
 - 示例校准：读 `references/examples.md`。
-- 触发和输出质量：看 `evals/trigger_cases.json`、`evals/output_cases.json`。
 
 ## 最小输出形状
 
