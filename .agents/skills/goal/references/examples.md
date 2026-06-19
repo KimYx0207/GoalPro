@@ -16,6 +16,9 @@
 Goal:
 实现用户登录。
 
+Intent:
+让已有用户安全进入受保护区域，同时不破坏项目现有认证体系。
+
 Outcome:
 已有用户能用账号密码登录，并获得受保护会话。
 
@@ -64,6 +67,9 @@ Final report:
 ```markdown
 /goal
 把项目从 JavaScript 迁移到 TypeScript。
+
+Intent:
+提升项目长期可维护性和类型安全，同时保持现有用户行为不变。
 
 Done when:
 - 应用能在 strict mode 下编译。
