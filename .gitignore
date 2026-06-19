@@ -9,6 +9,10 @@ graphify-out/
 # Codex 本机配置、hook、排障脚本通常含绝对路径，不提交
 .codex/
 
+# Claude Code 本机配置和项目级 hooks 不随 Skill 发布
+.claude/settings.json
+.claude/settings.local.json
+
 # Python 本地运行产物
 __pycache__/
 *.py[cod]
