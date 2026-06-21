@@ -18,11 +18,11 @@
 
 ## 简介
 
-**GoalPro** 是一个给 Codex 和 Claude Code 共用的 `goalpro` Skill。
+**GoalPro** 是一个给 Codex 和 Claude Code 共用的 `goalpro` Skill，用来写出高质量 goal 提示词 / Goal Contract。
 
 它要解决的问题很直接：用户给 Agent 的任务常常是模糊的、情绪化的、战略标准不清的。模型如果直接执行，很容易过度规划、乱读上下文、先改后想、命令跑通就假装完成。
 
-GoalPro 的作用，是先把请求变成一份可执行、可验证、可暂停的 **Goal Contract**：
+GoalPro 的作用，是先把请求变成一份交给执行者使用的、可执行、可验证、可暂停的 **Goal Contract**：
 
 - 真实意图是什么？
 - 完成后局面应该发生什么变化？
@@ -32,7 +32,9 @@ GoalPro 的作用，是先把请求变成一份可执行、可验证、可暂停
 - 什么情况下必须暂停？
 - 最后用什么证明真的完成？
 
-> 目标不是把提示词写长，而是把 Agent 从“猜用户想要什么”拉回到“按清楚的完成契约执行”。
+> 目标不是把提示词写长，也不是替用户执行 goal，而是把 Agent 从“猜用户想要什么”拉回到“按清楚的完成契约执行”。
+
+GoalPro 默认只输出可复制的 goal 提示词，并在输出后停住。只有用户另外明确授权执行，后续 Codex / Claude Code / 其他 Agent 才按这份 goal 开始做事。
 
 ```mermaid
 flowchart LR
@@ -71,17 +73,27 @@ flowchart LR
 
 ### 一句话总结
 
-> 先放大真实意图，再锁定战略标准，然后写成 Agent 能执行、用户能验收的任务契约。
+> 先放大真实意图，再锁定战略标准，然后写成 Agent 能执行、用户能验收的 goal 提示词。
 
 ## GoalPro 是什么、不是什么
 
 | 概念 | 它是什么 | 它不是什么 |
 |---|---|---|
-| **GoalPro Skill** | 意图放大和任务契约协议 | 简单的提示词润色器 |
-| **Goal Contract** | 可执行、可验证、可暂停的目标说明 | 一串漂亮但无法验收的愿景 |
+| **GoalPro Skill** | 写出高质量 goal 提示词 / Goal Contract 的 Skill | 执行 goal 的工具，也不是简单的提示词润色器 |
+| **Goal Contract** | 给执行者使用的可执行、可验证、可暂停目标说明 | 一串漂亮但无法验收的愿景 |
 | **Deep Research 门槛** | 战略和外部事实任务的证据前置要求 | 为了显得专业而堆链接 |
 | **Inventory** | 大改前的影响面、调用方、测试入口盘点 | 先重构再补解释 |
 | **表达经济** | 战略完整后的删空话 | 把省字数当核心目标 |
+
+## 好 goal 的质量门
+
+输出 Goal Contract 前，先过这五个门：
+
+1. **意图对齐**：不能只复述用户原话，必须说清用户真正要改变的局面；如果多种解释会改变路线、风险或验收，先问或写明默认假设。
+2. **字段互证**：`Intent`、`Strategic outcome`、`Decision standard`、`Execution policy`、`Verification` 必须互相支撑，不能各写各的。
+3. **可执行**：执行者能看出对象、动作、先读什么、做哪一片、不做什么、何时暂停。
+4. **可验收**：验证证据必须对应用户目标，不能用命令通过冒充真实完成。
+5. **不过度**：小任务不强行 deep research、inventory 或 eval；只有会改变判断、防止真实失败时才加流程。
 
 ## 快速示例
 
@@ -188,7 +200,7 @@ Skill 名称是 `goalpro`。
 |---|---|---|
 | **模糊需求** | 放大真实意图、定义成败标准 | Goal Contract |
 | **战略任务** | Deep Research、证据地图、反证 | Research-backed Goal Contract |
-| **代码执行** | 先读上下文、分片执行、验证 | Codex 执行提示词或 Claude Code 任务 |
+| **执行前 goal** | 先读上下文、分片执行、验证 | Codex `/goal` block 或 Claude Code 任务提示词 |
 | **大改/重构** | Inventory、影响面、测试入口 | 分片计划和暂停条件 |
 | **修复跑偏** | 找旧目标错位点、重写边界 | 修正版 Goal Contract |
 | **验收收尾** | 区分结构检查、本地验证、人工验收 | 最终报告标准 |
@@ -223,7 +235,7 @@ X <a href="https://x.com/KimYx0207">@KimYx0207</a> |
 
 ## 方法架构
 
-GoalPro 的核心不是固定模板，而是一条意图到交付的主干。
+GoalPro 的核心不是固定模板，而是一条把意图写成可执行 goal 的主干。它保障 goal 的质量，不替执行者完成 goal。
 
 ```text
 Critical -> Fetch -> Thinking -> Inventory -> Contract -> Review -> Verification
@@ -236,10 +248,10 @@ Critical -> Fetch -> Thinking -> Inventory -> Contract -> Review -> Verification
 | **Critical** | 用户真正要改变什么？ | 回到意图，不直接执行表面请求 |
 | **Fetch** | 哪些材料会改变判断？ | 先读本地上下文或外部来源 |
 | **Thinking** | 哪条路线最能赢？ | 比较取舍，标出反证和未知 |
-| **Inventory** | 影响面和验证入口是什么？ | 大改前暂停，先盘点 |
-| **Contract** | 如何写成执行契约？ | 补齐目标、边界、暂停条件 |
+| **Inventory** | 执行者需要先知道哪些影响面和验证入口？ | 大改前把盘点要求写进 goal |
+| **Contract** | 如何写成执行者能照着做的契约？ | 补齐目标、边界、暂停条件 |
 | **Review** | 有没有空话、越界、假完成？ | 删掉装饰性流程，保留判断 |
-| **Verification** | 用什么证明完成？ | 区分未验证、结构检查、本地验证、人工验收 |
+| **Verification** | 执行者最后要拿什么证明完成？ | 区分未验证、结构检查、本地验证、人工验收 |
 
 ### Deep Research 门
 
@@ -314,9 +326,9 @@ flowchart LR
 | `Non-goals` | 本轮不做什么 | 写“无”但任务很宽 |
 | `Context to read first` | 先读哪些会改变判断的材料 | 全仓库漫游 |
 | `Constraints` | 权限、安全、兼容、语言等硬限制 | 写成建议 |
-| `Execution policy` | 直接做、先问、先 inventory 的规则 | 仪式化提问 |
+| `Execution policy` | 执行者直接做、先问、先 inventory 的规则 | 仪式化提问 |
 | `Checkpoints` | 推进节点和可检查产物 | 过程流水账 |
-| `Verification` | 完成证据 | 命令通过 = 完成 |
+| `Verification` | 执行者必须交付的完成证据 | 命令通过 = 完成 |
 | `Stop conditions` | 必须暂停的条件 | 风险出现还继续 |
 | `Final report` | 最后汇报形状 | 大段复述过程 |
 
@@ -325,12 +337,15 @@ flowchart LR
 | 原则 | 原因 |
 |---|---|
 | 意图完成度优先 | 任务真正完成，比提示词漂亮更重要 |
+| 意图对齐先过门 | 表面请求、真实意图、战略结果、执行策略和验收证据必须互相支撑 |
+| 可执行性优先 | goal 必须让执行者知道对象、动作、边界、检查点和停止条件 |
 | 证据先于战略 | 没有 Fetch 的战略只能是草案 |
 | 上下文按需读取 | 全仓库漫游会制造噪音和误判 |
 | 大改先 inventory | 先知道影响面，才能控制重构风险 |
 | 社区信号要交叉验证 | GitHub、X、Reddit 能暴露失败模式，但不能替代证据 |
 | 表达经济从属 | 只删空话，不删判断、边界、证据和验收 |
 | 验证分层 | 结构检查、本地验证、线上验证、人工验收不是一回事 |
+| Prompt-only 边界 | GoalPro 产出 goal 后停止，执行需要用户另行授权 |
 | 不增加装饰机制 | agent、hook、eval 只有能防真实失败时才加 |
 
 ---

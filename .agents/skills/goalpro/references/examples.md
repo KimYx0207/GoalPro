@@ -58,7 +58,7 @@ Final report:
 输入：
 
 ```text
-搜索全网，帮我写一个高质量 goalpro Skill，要支持 Codex 和 Claude Code，必须能分析真实意图并执行好。
+搜索全网，帮我写一个高质量 goalpro Skill，要支持 Codex 和 Claude Code，必须能分析真实意图，并生成后续 Agent 能执行好的 goal。
 ```
 
 合格输出必须先声明研究门槛：
@@ -68,14 +68,14 @@ Research required:
 这是战略型 Skill 设计任务，依赖当前 Codex / Claude Code / Agent Skills / deep research 最佳实践。没有 deep research 只能给草案，不能给最终战略。
 
 Research question:
-判断 goalpro Skill 应该如何同时满足 Codex / Claude Code 触发、战略意图放大、deep research、输出位置和验证要求。
+判断 goalpro Skill 应该如何同时满足 Codex / Claude Code 触发、战略意图放大、deep research、输出位置、prompt-only 停止和生成 goal 的可执行性要求。
 
 Subquestions:
-1. 官方文档如何定义 goal / skill 的触发与完成标准？
+1. 官方文档如何定义 goal / skill 的触发、完成标准和可验证停止条件？
 2. 高质量 GitHub 项目如何组织 skill、references、examples？
 3. Reddit / issue 中真实用户在哪些场景里跑偏？
 4. X / 社区实践有哪些短循环信号，需要哪些交叉验证？
-5. 哪些证据会推翻“默认聊天输出、显式才写文件”的路线？
+5. 哪些证据会推翻“默认聊天输出、输出后停止、显式才写文件或执行”的路线？
 
 Evidence Map 摘要:
 - Source type: official
@@ -101,7 +101,7 @@ medium-high。官方文档和本地项目证据支持核心规则；社区信号
 
 Research-backed Goal Contract:
 Goal:
-重建 goalpro Skill，使它先放大真实意图和战略标准，再生成 Codex / Claude Code 可执行、可验证的 Goal Contract。
+重建 goalpro Skill，使它先放大真实意图和战略标准，再生成 Codex / Claude Code 可执行、可验证、可暂停的 Goal Contract，并在没有执行授权时停止。
 
 Intent:
 解决 agent 接到模糊任务后跑偏、过度计划、假完成的问题；不是追求短提示词，而是追求战略判断正确。
@@ -110,13 +110,16 @@ Strategic outcome:
 用户能把高风险、模糊、长期或研究型任务交给 agent 前，先得到一份能约束执行、验收和暂停条件的任务契约。
 
 Decision standard:
-意图完成度 > 证据质量 > 可执行性 > 表达经济。任何表达缩减都不能损害成败标准、边界、反证和验证。
+意图完成度 > 可执行性 > 证据质量 > prompt-only 停止 > 表达经济。任何表达缩减都不能损害成败标准、边界、反证、验证和授权边界。
 
 Evidence standard:
 战略任务必须先 fetch 权威来源和反证；普通项目任务必须先读会改变路线的本地材料；最终报告必须区分未验证、结构检查、本地验证、线上验证和人工验收。
 
+Execution policy:
+默认只输出 fenced `markdown` Goal Contract；不要继续改文件、运行命令或提交。只有用户明确授权执行时，才把生成的 goal 交给后续 agent 执行。
+
 Stop conditions:
-来源互相冲突且影响核心规则；关键证据缺失；研究没有改变 Goal Contract 字段。
+来源互相冲突且影响核心规则；关键证据缺失；研究没有改变 Goal Contract 字段；用户没有授权执行但上下文开始要求继续做事。
 ```
 
 ## 大改或重构请求
@@ -180,6 +183,33 @@ Stop conditions:
 - 明确删掉了哪些工作。
 - 如果旧版把次级目标当核心目标，必须改回用户真实意图。
 
+## 意图错位自检
+
+输入：
+
+```text
+帮我优化一下这个项目
+```
+
+不合格输出：
+
+```markdown
+Goal:
+优化项目，提高质量。
+
+Intent:
+用户想让项目更好。
+```
+
+合格输出必须补齐：
+
+- 用户点名项目或当前工作区；如果没有目标对象，先问或写明默认假设。
+- `Intent` 说明用户真正不满的是可维护性、体验、性能、文档、交付可信度，还是 Agent 已经跑偏。
+- `Strategic outcome` 说明完成后局面怎么变，而不是只说“更好”。
+- `Decision standard` 能区分该优先小修、重构、研究、清理还是只写 goal。
+- `Context to read first` 只列会改变判断的材料。
+- `Verification` 对应用户目标；不能只写“测试通过”。
+
 ## 聊天窗口直接输出
 
 输入：
@@ -210,7 +240,7 @@ Execution policy:
 只在聊天窗口输出 fenced `markdown` 代码块；不创建文件、不提交 git。
 
 Verification:
-用户能直接复制这段提示词使用；提示词包含目标、意图、标准、执行策略和验证。
+用户能直接复制这段提示词使用；提示词包含目标、意图、标准、执行策略和验证；输出后停止，不继续优化文件本身。
 ```
 ````
 
