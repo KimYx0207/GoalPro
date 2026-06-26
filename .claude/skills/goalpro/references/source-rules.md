@@ -6,12 +6,16 @@
 
 - Goal 是完成契约，不只是提示词：必须写清结果、限制、done-when 和验证证据。
 - GoalPro 是提示词生成 Skill，不是执行器：默认产出可复制 Goal Prompt + Loop Prompt，执行需要用户另行明确授权。
-- Loop Prompt 是交付后的持续进化协议：必须读取上一轮真实结果、验证证据、用户反馈和 loop state，再决定本轮动作、Done / Continue / Pause，并在 Continue 时产出可直接复用的 `Next LOOP packet`；不能授权当前 GoalPro 回合执行。
+- Loop Prompt 是交付后的持续进化协议，不是自动化运行时：必须读取上一轮真实结果、验证证据、用户反馈和 loop state，再决定本轮动作、Done / Continue / Pause，并在 Continue 时产出可直接复用的 `Next LOOP packet`；不能授权当前 GoalPro 回合执行。
+- Loop Prompt 必须把 `时间参数` 放在最前面：提示用户自行填写 LOOP 时间，如“手动：贴入上一轮结果后继续”“每天早上 09:00”“每次部署后”。这比把触发规则藏在后面更接近真实使用。
+- Loop Prompt 必须区分时间入口和自动化运行时：写了“每天 09:00”只是时间参数；只有用户明确授权创建自动化时，才进入自动化设置。
+- 自动化设置说明只在用户明确说自动、定时、每天、每周、持续监控或后台运行时写；必须简短说明调度器/平台、频率、时区、输入来源、权限、暂停条件和失败通知，不能暗示提示词本身已经后台运行。
 - 生成的 Goal 必须可执行：执行者能看出对象、动作、先读材料、范围、非目标、检查点、暂停条件和完成证据。
-- 生成的 Loop 必须可持续且可收敛：后续执行者能看出上一轮要读什么、继承什么状态、本轮修什么、如何证明新增价值、循环预算和无收敛阈值是什么、何时 Done / Continue / Pause、下一轮 LOOP 包怎么生成。
+- 生成的 Loop 必须可持续且可收敛：后续执行者能看出时间参数怎么填、上一轮要读什么、继承什么状态、本轮修什么、如何证明新增价值、循环预算和无收敛阈值是什么、何时 Done / Continue / Pause、下一轮 LOOP 包怎么生成。
 - 生成的 Goal 必须先过意图对齐质量门：表面请求、真实意图、战略结果、执行策略和验收证据要互相支撑。
 - Skill 的 `description` 是触发表面：只写“何时使用”和“做什么”，不能把次级优化目标写成触发词。
 - 输出位置是用户体验契约：默认聊天窗口给可复制代码块；只有用户明确要求保存或提交时才写文件。
+- 完成后的可判断样例是验收契约：最终汇报必须给用户看一个实际样例、案例片段、截图说明或改后输出片段，否则用户无法判断是否通过。
 - 输出形状必须清楚：默认用 `Goal Prompt:` 和 `Loop Prompt:` 两个代码块外标签分别引出两个 fenced `markdown` 代码块，不把标签放进代码块内，不输出 meta prompt rewrite 包装。
 - Skill 正文要短；细节、来源、示例放 `references/`，靠 progressive disclosure 按需加载。
 - 战略任务必须先证据后定论：没有 deep research 的战略只能标为草案。
@@ -88,7 +92,7 @@
    - 进入 `Execution policy`：决定直接做、先问、先 inventory 还是暂停。
    - 进入 `Verification`：定义怎么证明完成。
    - 进入 `Stop conditions`：定义哪些风险必须停。
-   - 进入 `Loop Prompt`：定义上一轮要看哪些结果、如何诊断差距、本轮怎么选动作、guardrails 怎么防止失控、如何判定 Done / Continue / Pause、下一轮 LOOP 包怎么生成。
+   - 进入 `Loop Prompt`：定义时间参数、上一轮要看哪些结果、如何诊断差距、本轮怎么选动作、如需自动化要单独说明哪些边界、guardrails 怎么防止失控、如何判定 Done / Continue / Pause、下一轮 LOOP 包怎么生成。
 
 如果研究没有改变成败标准、边界、执行策略或验证方式，就不算 deep research。
 
@@ -109,7 +113,8 @@
 5. `Skill / command / agent boundary`：Skill 放可复用流程；agent 放独立上下文和工具权限；command 放显式触发动作。
 6. `Reload awareness`：运行中的会话可能缓存 skill / agent 定义；修改定义后不能只靠同一会话自测证明新定义生效。
 7. `Evidence-bound loops`：迭代提示词必须绑定上一轮产物、验证失败、用户反馈、loop state 和剩余 delta；不能凭模型主观感觉进入下一轮。
-8. `Next loop packet`：持续循环不能只说“建议继续”，每轮必须产出下一轮可复制输入包，包含原始目标、轮次、已关闭证据、开放差距、下一轮焦点、guardrails 和停止条件。
+8. `Time-parameter-first loops`：持续循环必须先给可填写的时间参数；定时或后台运行属于自动化设置，不能由提示词本身隐式产生。
+9. `Next loop packet`：持续循环不能只说“建议继续”，每轮必须产出下一轮可复制输入包，包含原始目标、轮次、已关闭证据、开放差距、时间参数、下一轮焦点、guardrails 和停止条件。
 
 拒绝吸收的社区信号：
 
@@ -129,10 +134,11 @@
 6. Loop-only 边界：Loop Prompt 只用于交付后继续进化，不授权当前回合执行、修复或验证。
 7. 完成度优先：成败标准、关键边界、证据路径和取舍逻辑必须清楚。
 8. 证据优先：战略和外部事实任务必须有来源、反证、信心等级和决策影响。
-9. 进化可持续且可收敛：Loop 必须有上一轮材料、loop state、差距诊断、验证 delta、Loop guardrails、Continuation protocol、Next LOOP packet 和停止条件。
+9. 进化可持续且可收敛：Loop 必须有前置时间参数、上一轮材料、loop state、差距诊断、验证 delta、Loop guardrails、Continuation protocol、Next LOOP packet 和停止条件。
 10. 表达经济从属：只删空话，不删判断、边界、标准、验证。
 11. 每个关键字段必须能判断合格/不合格。
 12. 输出位置必须可预期：聊天默认、文件显式、文件模式也给聊天代码块。
+13. 完成后必须给样例：最终汇报除了改动和验证，还要展示一个足以让用户判断通过/不通过的样例或案例片段。
 13. 上下文读取只列会改变路线或验收的材料。
 14. 验证必须区分：未验证、结构检查、本地验证、线上验证、人工验收。
 15. 不因“看起来完整”增加机制；只为防真实失败加规则。
@@ -145,7 +151,9 @@
 - Agent Skills best practices: https://agentskills.io/skill-creation/best-practices
 - OpenAI Codex prompting and goals: https://developers.openai.com/codex/prompting
 - OpenAI Codex follow goals: https://developers.openai.com/codex/use-cases/follow-goals
+- OpenAI Codex automations: https://developers.openai.com/codex/app/automations
 - OpenAI Codex skills best practices: https://developers.openai.com/codex/skills
+- OpenAI ChatGPT tasks: https://help.openai.com/en/articles/10291617-tasks-in-chatgpt
 - OpenAI Deep Research API: https://developers.openai.com/api/docs/guides/deep-research
 - OpenAI Deep Research cookbook: https://developers.openai.com/cookbook/examples/deep_research_api/introduction_to_deep_research_api
 - OpenAI Academy Deep Research guide: https://academy.openai.com/public/clubs/work-users-ynjqu/resources/integrating-deep-research-into-your-workflow-2026-05-29
@@ -181,6 +189,7 @@
 
 - OpenAI Codex goal 文档：goal 要像“完成条件”一样写，包含具体结果、可测标准和验证面。
 - OpenAI iterative repair / improvement loop：高质量迭代要把输出、验证失败、剩余 delta、最大尝试、无收敛、人类审查和停止条件闭环；validation feedback 应成为下一轮修复依据。
+- OpenAI Codex Automations / ChatGPT Tasks：定时、周期性和后台触发是独立的自动化/任务能力，需要明确频率、触发条件和运行上下文；GoalPro 可以给时间参数和自动化设置说明，但不能靠“继续循环”隐式创建调度器。
 - OpenAI / Agent Skills / Claude Skills：Skill 触发主要依赖 frontmatter description；description 必须描述使用场景，不能塞次要目标。
 - OpenAI Deep Research：适合陌生、高风险、证据密集的任务；输出应带引用、来源元数据和中间检索过程。
 - Anthropic agents：复杂研究可拆成多个子问题；有明确评价标准时，应让评估反过来改进结果。
@@ -200,6 +209,8 @@
 - 把“写 goal”误当成“开始执行 goal”。
 - 把“写 loop”误当成“当前回合继续修复或验证”。
 - Loop Prompt 不看上一轮真实结果和 loop state，只泛泛要求“继续优化”。
+- Loop Prompt 只写 Continue / Next，却不给用户可填写的时间参数。
+- 把时间参数当成已经创建的后台自动化，没有调度器、频率、时区、输入来源、权限和暂停规则。
 - Loop Prompt 只像一次性返工提示词，没有 `Next LOOP packet`，下一轮还要靠聊天记忆。
 - Loop Prompt 没有 Loop guardrails、Done / Continue / Pause 判定、停止条件或人类介入条件。
 - Goal 看起来完整，但执行者不知道先读什么、做哪一片、何时暂停、交付什么证据。
@@ -217,4 +228,5 @@
 - 用户给了文件/错误/截图，却先问一堆问题。
 - 小任务要求全仓库阅读。
 - 测试通过就说完成，但用户要的行为没有证据。
+- 只说改了什么和验证命令，不给用户看改后的样例/案例，导致用户无法判断是否通过。
 - 为了显得高级创建 Skill、agent、command、eval。

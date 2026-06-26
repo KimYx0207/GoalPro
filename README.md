@@ -25,7 +25,7 @@
 GoalPro 的作用，是先把请求变成两段交给执行者使用的、可复制、可验证、可暂停的提示词：
 
 - **Goal Prompt**：启动本轮执行，核心是可执行的 **Goal Contract**。
-- **Loop Prompt**：在本轮执行结果出来之后使用，引导复盘、差距修复和持续进化；每轮结束都产出可继承的 `Next LOOP packet`。
+- **Loop Prompt**：在本轮执行结果出来之后使用，引导复盘、差距修复和持续进化；开头先给 `时间参数`，让用户直接填写下一轮什么时候继续，如“手动贴入结果后”或“每天早上 09:00”。
 
 Goal Prompt 要回答：
 
@@ -36,6 +36,7 @@ Goal Prompt 要回答：
 - 哪些事情本轮不做？
 - 什么情况下必须暂停？
 - 最后用什么证明真的完成？
+- 完成后给用户看哪个实际样例，方便判断是否通过？
 
 Loop Prompt 要回答：
 
@@ -43,13 +44,14 @@ Loop Prompt 要回答：
 - 哪些证据证明已经达标，哪些只是表面通过？
 - 用户意图还有哪些未满足的差距？
 - 本轮应该修复、收敛还是暂停？
+- 时间参数怎么填：手动继续、事件触发，还是每天/每周固定时间？
 - 如果继续，下一轮 LOOP 要继承什么状态？
 - 循环预算、无收敛阈值和人工介入条件是什么？
 - 什么时候可以停止继续进化？
 
 > 目标不是把提示词写长，也不是替用户执行 goal，而是把 Agent 从“猜用户想要什么”拉回到“按清楚的完成契约执行”。
 
-GoalPro 默认只输出可复制的 Goal Prompt + Loop Prompt，并在输出后停住。两个提示词必须用代码块外的 `Goal Prompt:` / `Loop Prompt:` 标签分开，不额外包一层 prompt rewrite 解释。只有用户另外明确授权执行，后续 Codex / Claude Code / 其他 Agent 才按 Goal Prompt 开始做事；Loop Prompt 只在拿到执行结果后用于持续进化。Loop 不是一次性返工提示词，也不是无限自动循环；它要求每轮结束时输出 `Next LOOP packet`，并用 `Loop guardrails` 控制预算、无收敛和人工审查边界。
+GoalPro 默认只输出可复制的 Goal Prompt + Loop Prompt，并在输出后停住。两个提示词必须用代码块外的 `Goal Prompt:` / `Loop Prompt:` 标签分开，不额外包一层 prompt rewrite 解释。只有用户另外明确授权执行，后续 Codex / Claude Code / 其他 Agent 才按 Goal Prompt 开始做事；Loop Prompt 只在拿到执行结果后用于持续进化。Loop Prompt 开头必须先给一个可填写的 `时间参数`，但写了时间不等于已经创建后台任务；如果用户要真正定时或后台运行，需要单独设置自动化。
 
 ```mermaid
 flowchart LR
@@ -109,7 +111,7 @@ flowchart LR
 |---|---|---|
 | **GoalPro Skill** | 写出 Goal Prompt + Loop Prompt 的 Skill | 执行 goal 的工具，也不是简单的提示词润色器 |
 | **Goal Prompt** | 给执行者启动本轮任务的可执行提示词，核心是 Goal Contract | 一串漂亮但无法验收的愿景 |
-| **Loop Prompt** | 给执行结果之后使用的持续循环协议，每轮产出 `Next LOOP packet` | 当前回合的自动执行授权、一次性返工提示词，或无限循环的借口 |
+| **Loop Prompt** | 给执行结果之后使用的持续循环协议，开头给 `时间参数`，每轮产出 `Next LOOP packet` | 当前回合的自动执行授权、一次性返工提示词、后台调度器本身，或无限循环的借口 |
 | **Goal Contract** | Goal Prompt 里的可执行、可验证、可暂停目标说明 | 空泛愿景或待办清单 |
 | **Deep Research 门槛** | 战略和外部事实任务的证据前置要求 | 为了显得专业而堆链接 |
 | **Inventory** | 大改前的影响面、调用方、测试入口盘点 | 先重构再补解释 |
@@ -122,8 +124,8 @@ flowchart LR
 1. **意图对齐**：不能只复述用户原话，必须说清用户真正要改变的局面；如果多种解释会改变路线、风险或验收，先问或写明默认假设。
 2. **字段互证**：`Intent`、`Strategic outcome`、`Decision standard`、`Execution policy`、`Verification` 必须互相支撑，不能各写各的。
 3. **可执行**：执行者能看出对象、动作、先读什么、做哪一片、不做什么、何时暂停。
-4. **可验收**：验证证据必须对应用户目标，不能用命令通过冒充真实完成。
-5. **可进化**：Loop Prompt 必须要求读取上一轮真实结果和证据，指出剩余差距，给出 Done / Continue / Pause 判断，在 Continue 时输出 `Next LOOP packet`，并用 guardrails 防止无限循环。
+4. **可验收**：验证证据必须对应用户目标，不能用命令通过冒充真实完成；完成后必须展示一个实际样例、案例片段、截图说明或改后输出片段，让用户能判断是否通过。
+5. **可进化**：Loop Prompt 必须先给 `时间参数`，再要求读取上一轮真实结果和证据，指出剩余差距，给出 Done / Continue / Pause 判断，在 Continue 时输出 `Next LOOP packet`，并用 guardrails 防止无限循环。
 6. **不过度**：小任务不强行 deep research、inventory 或 eval；只有会改变判断、防止真实失败时才加流程。
 
 ## 快速示例
@@ -162,6 +164,9 @@ Stop conditions:
 Loop Prompt:
 
 ```markdown
+时间参数:
+请自行填写 LOOP 时间，如“每天早上 09:00”；如果只想手动继续，填写“手动：贴入上一轮结果或 Next LOOP packet 后继续”。
+
 Loop mission:
 持续推进“项目恢复到可验证状态”这个目标；每轮基于真实执行结果关闭最高价值差距，直到 Done 或 Pause。
 
@@ -190,10 +195,10 @@ Continuation protocol:
 每轮结束必须判定 `Done`、`Continue` 或 `Pause`。如果仍有未关闭且值得继续的差距，输出可直接复制到下一轮的 `Next LOOP packet`；如果差距已关闭，报告 Done；如果连续两轮无收敛、验证无法运行或需要用户决策，报告 Pause。
 
 Next LOOP packet:
-包含原始目标、当前轮次、已关闭证据、开放差距、下一轮焦点、要读取的材料、停止条件和本轮新增验证。下一轮 Agent 可以只拿这个 packet 继续。
+包含原始目标、当前轮次、已关闭证据、开放差距、时间参数、下一轮焦点、要读取的材料、停止条件和本轮新增验证。下一轮 Agent 可以只拿这个 packet 继续。
 ```
 
-这类输出的重点不是“格式完整”，而是让执行者知道：先读什么、做什么、不做什么、什么时候停、最后拿什么证明。交付后，你可以使用 LOOP 继续进行进化；每轮把上轮产出的 `Next LOOP packet` 带到下一轮。
+这类输出的重点不是“格式完整”，而是让执行者知道：先读什么、做什么、不做什么、什么时候进入下一轮、什么时候停、最后拿什么证明。交付后，你可以按 `时间参数` 手动继续；如果要它真的定时或后台自动跑，需要另行授权自动化设置。
 
 ## 快速开始
 
@@ -400,7 +405,7 @@ flowchart LR
 | `Checkpoints` | 推进节点和可检查产物 | 过程流水账 |
 | `Verification` | 执行者必须交付的完成证据 | 命令通过 = 完成 |
 | `Stop conditions` | 必须暂停的条件 | 风险出现还继续 |
-| `Final report` | 最后汇报形状 | 大段复述过程 |
+| `Final report` | 最后汇报形状；必须包含可判断的验收样例/案例片段 | 大段复述过程，或只说“已完成”不给样例 |
 
 ## Loop Prompt 字段
 
@@ -408,12 +413,13 @@ flowchart LR
 |---|---|---|
 | `Loop mission` | 说明持续进化使命和最终 Done 条件 | 写成一次性返工目标 |
 | `Loop state` | 保存原始目标、当前轮次、已关闭证据、开放差距和下一轮焦点 | 每轮重新开始 |
+| `时间参数` | 放在 Loop Prompt 最前面，让用户填写下一轮何时继续，如手动、每天 09:00、每次部署后 | 只写 Continue，不给时间入口；把填写时间冒充已创建后台任务 |
 | `Previous result to inspect` | 指定要读取的最终报告、diff、验证、截图、用户反馈等 | 只看聊天结论，不看证据 |
 | `Review evidence` | 区分真实通过、结构检查、人工验收、无证据声明 | 把“说已完成”当完成 |
 | `Gap diagnosis` | 找出原始意图仍未满足的点并排序 | 无限扩范围、重开已完成事项 |
 | `Cycle action` | 规定本轮只处理哪个最高价值差距 | 看到问题就大改 |
 | `Verification delta` | 说明本轮比上一轮多证明了什么 | 重复跑无关测试 |
-| `Loop guardrails` | 规定最大尝试、无收敛阈值、可改范围和人工审查触发 | 持续变成无限自动循环 |
+| `Loop guardrails` | 规定最大尝试、时间预算、无收敛阈值、可改范围、暂停调度和人工审查触发 | 持续变成无限自动循环 |
 | `Continuation protocol` | 每轮结束判定 Done / Continue / Pause | 只写“建议继续” |
 | `Stop / escalate conditions` | 规定什么时候必须停下来问用户或升级判断 | 路线错误、权限风险仍继续 |
 | `Next LOOP packet` | 生成下一轮可直接复用的状态包 | 下一轮还靠聊天记忆 |
@@ -431,8 +437,10 @@ flowchart LR
 | 社区信号要交叉验证 | GitHub、X、Reddit 能暴露失败模式，但不能替代证据 |
 | 表达经济从属 | 只删空话，不删判断、边界、证据和验收 |
 | 验证分层 | 结构检查、本地验证、线上验证、人工验收不是一回事 |
+| 完成后给样例 | 改完必须给用户看实际样例/案例片段，否则用户无法判断是否通过 |
 | Prompt-only 边界 | GoalPro 产出 goal 后停止，执行需要用户另行授权 |
 | Loop 不是执行授权 | Loop Prompt 只供交付后粘贴使用，不能让 GoalPro 当前回合继续执行 |
+| Loop 有时间入口 | 开头先给 `时间参数`；定时/后台执行属于自动化设置，需要显式授权 |
 | Loop 必须可持续且可停止 | 每轮结束要输出 `Next LOOP packet` 或明确 Done / Pause，同时保留 guardrails，不能只修一轮也不能无限循环 |
 | 进化依赖证据 | 下一轮必须读取上一轮真实结果、验证、用户反馈和 LOOP state，而不是凭感觉重写 |
 | 不增加装饰机制 | agent、hook、eval 只有能防真实失败时才加 |

@@ -1,13 +1,13 @@
 ---
 name: goalpro
-description: 当用户要写出高质量 Goal Prompt 和交付后继续进化用的 Loop Prompt，把模糊、战略性、多步骤、证据不足或容易跑偏的请求整理成可执行、可验证、可暂停的目标契约时使用。适用于写 goal、优化任务提示词、明确 done/success criteria、deep research 后定战略、大改前 inventory、修复跑偏计划、为 Codex 或 Claude Code 准备执行任务；默认只生成提示词，不执行 goal 或 loop。
+description: 当用户要写出高质量 Goal Prompt 和交付后继续进化用的 Loop Prompt，把模糊、战略性、多步骤、证据不足或容易跑偏的请求整理成可执行、可验证、可暂停且带时间参数的目标契约时使用。适用于写 goal、优化任务提示词、明确 done/success criteria、deep research 后定战略、大改前 inventory、修复跑偏计划、为 Codex 或 Claude Code 准备执行任务；默认只生成提示词，不执行 goal 或 loop，也不创建自动化。
 ---
 
 # Goal Prompt + Loop Prompt
 
 目标：先把真实意图、战略判断、证据标准和成败边界讲清楚，再写成 Codex / Claude Code 能执行、能验收、少跑偏的 Goal Prompt；同时产出一个交付后继续进化用的 Loop Prompt。
 
-GoalPro 的交付物是可复制的提示词，不是任务执行结果。默认输出两段：`Goal Prompt` 用于启动执行，`Loop Prompt` 用于执行结果出来后的复盘、差距修复和持续进化。Loop 不是“一次性返工提示词”，而是每轮都产出 `Next LOOP packet` 的循环控制器。除非用户明确说“按这个 goal 执行 / 开始改 / 写入文件 / 提交”，否则输出两段提示词后必须停止。
+GoalPro 的交付物是可复制的提示词，不是任务执行结果。默认输出两段：`Goal Prompt` 用于启动执行，`Loop Prompt` 用于执行结果出来后的复盘、差距修复和持续进化。Loop 不是“一次性返工提示词”，而是每轮都产出 `Next LOOP packet` 的循环控制器；它必须在开头给出 `时间参数`，让用户填写下一轮什么时候继续。除非用户明确说“按这个 goal 执行 / 开始改 / 写入文件 / 提交 / 创建自动化”，否则输出两段提示词后必须停止。
 
 这不是“让提示词更短”的 Skill。表达经济只在战略完整后处理：删空话，不删判断、边界、证据和验收。
 
@@ -25,8 +25,10 @@ GoalPro 的交付物是可复制的提示词，不是任务执行结果。默认
 
 - Skill mention 不等于执行授权。用户只说 `goalpro`、`写 goal`、`优化提示词`、`帮我做个目标` 时，只生成可复制的 goal 提示词。
 - 新版默认生成两段提示词：`Goal Prompt` 和 `Loop Prompt`。Loop 只是交付后可粘贴的继续进化提示词，不授权当前回合执行。
+- Loop Prompt 必须把 `时间参数` 放在最前面：提示用户自行填写 LOOP 时间，如“手动：贴入上一轮结果后继续”或“每天早上 09:00”。
+- 定时/自动 Loop 只是自动化设置说明，除非用户明确授权创建或修改自动化；写了时间不等于已经创建后台任务。
 - 生成的 goal 必须能指导后续执行者：对象、动作、上下文、范围、非目标、检查点、暂停条件和验收证据都要清楚。
-- 生成的 loop 必须能指导后续执行者复盘上一轮真实结果：看最终报告、diff、验证、截图、用户反馈，定位剩余差距，再决定本轮动作、是否已 Done、是否 Pause、以及下一轮 `Next LOOP packet`。
+- 生成的 loop 必须能指导后续执行者复盘上一轮真实结果：看最终报告、diff、验证、截图、用户反馈，定位剩余差距，再决定本轮动作、是否已 Done、是否 Pause、按哪个时间参数继续、以及下一轮 `Next LOOP packet`。
 - 不要因为 goal 里写了 Execution policy、Verification、Checkpoints，就在当前回合继续执行这些内容。
 - 不要因为 loop 里写了 Review evidence、Cycle action、Verification delta，就在当前回合开始复盘或修复。
 - 只有用户额外明确授权执行、保存、修改文件、提交或发布时，才进入独立的执行任务；那已经不是 GoalPro 的默认输出模式。
@@ -39,7 +41,7 @@ GoalPro 的交付物是可复制的提示词，不是任务执行结果。默认
 - `Intent` 不能只复述用户原话；必须说明用户真正要改变的局面、当前不满和最大误伤点。
 - `Strategic outcome` 和 `Decision standard` 必须解释为什么这个 goal 符合用户意图，而不是只描述交付物。
 - 如果换掉项目名、文件名或用户场景后仍然成立，就太泛；补对象、边界、先读材料、检查点或暂停条件。
-- `Loop Prompt` 必须绑定上一轮交付物和验证证据，不能写成一个不看结果的新 goal；它必须包含可继承的 loop state 和下一轮 LOOP 生成规则。
+- `Loop Prompt` 必须绑定上一轮交付物和验证证据，不能写成一个不看结果的新 goal；它必须先给可填写的时间参数，再包含可继承的 loop state 和下一轮 LOOP 生成规则。
 - 如果不同解释会改变路线、风险、权限、范围或验收，先问一个阻塞问题；不影响路线时写明默认假设。
 
 ## Deep Research 门槛
@@ -61,7 +63,7 @@ Deep Research 执行顺序：
 6. 反证检查：主动找能推翻当前路线的证据；冲突保留，不强行合并。
 7. 定信心等级：high / medium / low，并说明依据。
 8. 选输出形态：证据足够才输出 `Research-backed Goal Prompt + Loop Prompt`；不足输出 `Draft Goal + Draft Loop` 或 `Research Plan`。
-9. 写回 Goal / Loop：研究结果必须改变 Decision standard、Evidence standard、Scope、Non-goals、Execution policy、Verification、Stop conditions 或 Loop 的 Review evidence、Gap diagnosis、Verification delta、Continuation protocol、Next LOOP packet；否则不算 deep research。
+9. 写回 Goal / Loop：研究结果必须改变 Decision standard、Evidence standard、Scope、Non-goals、Execution policy、Verification、Stop conditions 或 Loop 的时间参数、Review evidence、Gap diagnosis、Verification delta、自动化设置边界、Continuation protocol、Next LOOP packet；否则不算 deep research。
 
 `Evidence Map` 格式：
 
@@ -133,6 +135,7 @@ Final report:
 Loop Prompt:
 
 ```markdown
+时间参数:
 Loop mission:
 Loop state:
 Previous result to inspect:
@@ -161,10 +164,11 @@ Next LOOP packet:
 | `Checkpoints` | 推进节点 | 每点有可检查输出 | 过程流水账 |
 | `Verification` | 后续执行者必须交付的完成证据 | 测试、diff、截图、线上状态、人工验收分清 | 命令通过=完成 |
 | `Stop conditions` | 必须暂停条件 | 路线、权限、删除、发布、密钥等风险 | 风险出现还继续 |
-| `Final report` | 最后汇报 | 改了什么、证据、风险 | 大段复述过程 |
+| `Final report` | 最后汇报 | 改了什么、证据、风险，并给出一个用户可直接判断是否通过的验收样例/案例片段 | 只说“已完成”，不给实际样例 |
 
 | Loop 字段 | 写什么 | 合格标准 | 常见错误 |
 |---|---|---|---|
+| `时间参数` | 下一轮何时继续 | 放在 Loop Prompt 最前面，提示用户填写“手动：贴入上一轮结果后继续”或“每天早上 09:00”；若要真实后台运行，说明需另行创建 automation | 把时间入口藏到后面；写了时间就假装已自动运行 |
 | `Loop mission` | 持续进化使命 | 绑定原始意图、目标质量线和可持续循环，不只描述下一轮 | 写成一次性返工目标 |
 | `Loop state` | 跨轮继承状态 | 保留原始目标、当前轮次、已关闭证据、开放差距、下一轮焦点 | 每轮重新开始 |
 | `Previous result to inspect` | 必须读取的上一轮材料 | 最终报告、diff、验证、截图、用户反馈、失败日志按需列出 | 只看聊天结论 |
@@ -172,7 +176,7 @@ Next LOOP packet:
 | `Gap diagnosis` | 剩余差距 | 按交付阻塞、体验影响、表达整理排序 | 无限扩范围 |
 | `Cycle action` | 本轮动作选择 | 每轮只选最高价值差距执行；修复、验证、收敛或暂停必须有依据 | 看到问题就大改 |
 | `Verification delta` | 新增或补充验证 | 说明本轮比上一轮多证明了什么 | 重复跑无关检查 |
-| `Loop guardrails` | 循环预算和防失控边界 | 写清最大尝试、无收敛阈值、可改范围、验证失败和人工审查触发 | 持续变成无限自动循环 |
+| `Loop guardrails` | 循环预算和防失控边界 | 写清最大尝试、时间预算、无收敛阈值、可改范围、验证失败、暂停调度和人工审查触发 | 持续变成无限自动循环 |
 | `Continuation protocol` | 循环继续规则 | 每轮结束必须判定 Done / Continue / Pause；Continue 时产出下一轮 LOOP 包 | 只写“建议继续” |
 | `Stop / escalate conditions` | Loop 必须暂停或升级条件 | 权限、发布、删除、路线冲突、验证不可得、连续无收敛等风险停下 | 风险出现还继续 |
 | `Next LOOP packet` | 下一轮可直接复用的输入包 | 包含 loop state、已关闭证据、开放差距、下一轮焦点和继续/暂停判断 | 下一轮还靠聊天记忆 |
@@ -197,6 +201,7 @@ Next LOOP packet:
 - 大改/重构场景：先输出 inventory、影响面、分片计划、每片验证；不得先重构再补解释。
 - Repair 场景：先指出旧目标哪里错，再给修正版和防跑偏检查。
 - Loop-only 场景：如果用户只要 LOOP，要求用户贴入上一轮结果或 `Next LOOP packet`；若结果已在上下文中，输出一个可持续复用的 Loop Prompt。
+- 自动化 Loop 场景：如果用户明确说自动、定时、每天、每周、持续监控或后台运行，先在 `时间参数` 中给可填写示例，再输出简短自动化设置说明；除非用户授权创建或修改自动化，否则不实际创建。
 
 所有输出模式默认在 Goal Prompt + Loop Prompt 后停止；不要追加“我现在开始执行”。最后提醒：你可以使用 LOOP 继续进行进化。
 
@@ -206,7 +211,7 @@ Next LOOP packet:
 - 对齐：`Intent`、`Strategic outcome`、`Decision standard`、`Execution policy`、`Verification` 能解释为什么这个 goal 符合用户意图。
 - 反泛化：把项目名、对象名替换后仍然成立的空话已经删掉或补成具体边界。
 - 可执行：执行者能看出对象、动作、先读材料、推进顺序、暂停条件和验收证据。
-- Loop：Loop Prompt 能看出上一轮结果要读什么、如何找差距、本轮做什么、何时 Done / Continue / Pause、下一轮 `Next LOOP packet` 如何生成。
+- Loop：Loop Prompt 开头有可填写 `时间参数`，并能看出上一轮结果要读什么、如何找差距、本轮做什么、何时 Done / Continue / Pause、下一轮 `Next LOOP packet` 如何生成。
 - 战略：说明结果价值、成败标准、证据标准和关键取舍。
 - Deep Research：战略或外部事实任务有来源、反证、信心等级和决策影响。
 - Community Signal：GitHub / X / Reddit 只当候选证据，已说明来源类型和采纳理由。
@@ -217,8 +222,10 @@ Next LOOP packet:
 - 标签：默认输出必须有 `Goal Prompt:` 与 `Loop Prompt:` 两个可见标签。
 - 停止：没有明确执行授权时，输出 goal 后停止，不继续读仓库、改文件、运行命令或提交。
 - 进化：Loop 不授权当前回合执行；只作为交付后可复制的持续循环提示词，每轮必须产出可继承的 `Next LOOP packet` 或明确 Done / Pause。
+- 自动化：`时间参数` 是用户填写入口，不是自动化创建结果；若写定时/后台自动化，必须说明需要另行授权创建。
 - 工具：只要求读取会改变判断的上下文。
 - 证据：区分未验证、结构检查、本地验证、线上验证、人工验收。
+- 样例：完成后必须展示一个实际样例、案例片段、截图说明或改后输出片段，让用户能判断是否通过。
 - 表达：压缩只删空话，不删意图、边界、标准和验证。
 
 ## 需要更多细节时
