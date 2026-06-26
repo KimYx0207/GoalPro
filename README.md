@@ -1,7 +1,7 @@
 <div align="center">
 
 <h1 style="font-size: 4em; font-weight: 900; margin-bottom: 0.1em; letter-spacing: 0.04em;">GoalPro</h1>
-<p style="font-size: 1.1em; color: #2563eb; font-weight: 600; margin-top: 0;">意图放大与 Goal Contract 协议</p>
+<p style="font-size: 1.1em; color: #2563eb; font-weight: 600; margin-top: 0;">意图放大、Goal Prompt 与 Loop Prompt 协议</p>
 
 <p>
   <strong>简体中文</strong>
@@ -18,11 +18,16 @@
 
 ## 简介
 
-**GoalPro** 是一个给 Codex 和 Claude Code 共用的 `goalpro` Skill，用来写出高质量 goal 提示词 / Goal Contract。
+**GoalPro** 是一个给 Codex 和 Claude Code 共用的 `goalpro` Skill，用来写出高质量 Goal Prompt，并附带交付后继续进化用的 Loop Prompt。
 
 它要解决的问题很直接：用户给 Agent 的任务常常是模糊的、情绪化的、战略标准不清的。模型如果直接执行，很容易过度规划、乱读上下文、先改后想、命令跑通就假装完成。
 
-GoalPro 的作用，是先把请求变成一份交给执行者使用的、可执行、可验证、可暂停的 **Goal Contract**：
+GoalPro 的作用，是先把请求变成两段交给执行者使用的、可复制、可验证、可暂停的提示词：
+
+- **Goal Prompt**：启动本轮执行，核心是可执行的 **Goal Contract**。
+- **Loop Prompt**：在本轮执行结果出来之后使用，引导复盘、差距修复和持续进化；每轮结束都产出可继承的 `Next LOOP packet`。
+
+Goal Prompt 要回答：
 
 - 真实意图是什么？
 - 完成后局面应该发生什么变化？
@@ -32,9 +37,19 @@ GoalPro 的作用，是先把请求变成一份交给执行者使用的、可执
 - 什么情况下必须暂停？
 - 最后用什么证明真的完成？
 
+Loop Prompt 要回答：
+
+- 上一轮真实交付了什么？
+- 哪些证据证明已经达标，哪些只是表面通过？
+- 用户意图还有哪些未满足的差距？
+- 本轮应该修复、收敛还是暂停？
+- 如果继续，下一轮 LOOP 要继承什么状态？
+- 循环预算、无收敛阈值和人工介入条件是什么？
+- 什么时候可以停止继续进化？
+
 > 目标不是把提示词写长，也不是替用户执行 goal，而是把 Agent 从“猜用户想要什么”拉回到“按清楚的完成契约执行”。
 
-GoalPro 默认只输出可复制的 goal 提示词，并在输出后停住。只有用户另外明确授权执行，后续 Codex / Claude Code / 其他 Agent 才按这份 goal 开始做事。
+GoalPro 默认只输出可复制的 Goal Prompt + Loop Prompt，并在输出后停住。两个提示词必须用代码块外的 `Goal Prompt:` / `Loop Prompt:` 标签分开，不额外包一层 prompt rewrite 解释。只有用户另外明确授权执行，后续 Codex / Claude Code / 其他 Agent 才按 Goal Prompt 开始做事；Loop Prompt 只在拿到执行结果后用于持续进化。Loop 不是一次性返工提示词，也不是无限自动循环；它要求每轮结束时输出 `Next LOOP packet`，并用 `Loop guardrails` 控制预算、无收敛和人工审查边界。
 
 ```mermaid
 flowchart LR
@@ -56,9 +71,18 @@ flowchart LR
         I --> J["最终报告"]
     end
 
+    subgraph loop["进化层"]
+        J --> K["执行结果"]
+        K --> L["差距诊断"]
+        L --> M["Loop Prompt"]
+        M --> N["Next LOOP packet"]
+        N --> G
+    end
+
     style intent fill:#dbeafe,stroke:#2563eb,color:#000
     style contract fill:#fef3c7,stroke:#f59e0b,color:#000
     style execution fill:#dcfce7,stroke:#16a34a,color:#000
+    style loop fill:#fce7f3,stroke:#db2777,color:#000
     style A fill:#93c5fd,stroke:#2563eb,color:#000,stroke-width:2px
     style B fill:#60a5fa,stroke:#2563eb,color:#000,stroke-width:2px
     style C fill:#34d399,stroke:#059669,color:#000,stroke-width:2px
@@ -69,31 +93,38 @@ flowchart LR
     style H fill:#86efac,stroke:#16a34a,color:#000,stroke-width:2px
     style I fill:#f87171,stroke:#dc2626,color:#fff,stroke-width:2px
     style J fill:#818cf8,stroke:#6366f1,color:#fff,stroke-width:2px
+    style K fill:#fbcfe8,stroke:#db2777,color:#000,stroke-width:2px
+    style L fill:#f9a8d4,stroke:#be185d,color:#000,stroke-width:2px
+    style M fill:#ec4899,stroke:#be185d,color:#fff,stroke-width:2px
+    style N fill:#be185d,stroke:#831843,color:#fff,stroke-width:2px
 ```
 
 ### 一句话总结
 
-> 先放大真实意图，再锁定战略标准，然后写成 Agent 能执行、用户能验收的 goal 提示词。
+> 先放大真实意图，再锁定战略标准，然后写成 Agent 能执行、用户能验收、结果能继续进化的双提示词。
 
 ## GoalPro 是什么、不是什么
 
 | 概念 | 它是什么 | 它不是什么 |
 |---|---|---|
-| **GoalPro Skill** | 写出高质量 goal 提示词 / Goal Contract 的 Skill | 执行 goal 的工具，也不是简单的提示词润色器 |
-| **Goal Contract** | 给执行者使用的可执行、可验证、可暂停目标说明 | 一串漂亮但无法验收的愿景 |
+| **GoalPro Skill** | 写出 Goal Prompt + Loop Prompt 的 Skill | 执行 goal 的工具，也不是简单的提示词润色器 |
+| **Goal Prompt** | 给执行者启动本轮任务的可执行提示词，核心是 Goal Contract | 一串漂亮但无法验收的愿景 |
+| **Loop Prompt** | 给执行结果之后使用的持续循环协议，每轮产出 `Next LOOP packet` | 当前回合的自动执行授权、一次性返工提示词，或无限循环的借口 |
+| **Goal Contract** | Goal Prompt 里的可执行、可验证、可暂停目标说明 | 空泛愿景或待办清单 |
 | **Deep Research 门槛** | 战略和外部事实任务的证据前置要求 | 为了显得专业而堆链接 |
 | **Inventory** | 大改前的影响面、调用方、测试入口盘点 | 先重构再补解释 |
 | **表达经济** | 战略完整后的删空话 | 把省字数当核心目标 |
 
-## 好 goal 的质量门
+## 好 Goal + Loop 的质量门
 
-输出 Goal Contract 前，先过这五个门：
+输出 Goal Prompt + Loop Prompt 前，先过这六个门：
 
 1. **意图对齐**：不能只复述用户原话，必须说清用户真正要改变的局面；如果多种解释会改变路线、风险或验收，先问或写明默认假设。
 2. **字段互证**：`Intent`、`Strategic outcome`、`Decision standard`、`Execution policy`、`Verification` 必须互相支撑，不能各写各的。
 3. **可执行**：执行者能看出对象、动作、先读什么、做哪一片、不做什么、何时暂停。
 4. **可验收**：验证证据必须对应用户目标，不能用命令通过冒充真实完成。
-5. **不过度**：小任务不强行 deep research、inventory 或 eval；只有会改变判断、防止真实失败时才加流程。
+5. **可进化**：Loop Prompt 必须要求读取上一轮真实结果和证据，指出剩余差距，给出 Done / Continue / Pause 判断，在 Continue 时输出 `Next LOOP packet`，并用 guardrails 防止无限循环。
+6. **不过度**：小任务不强行 deep research、inventory 或 eval；只有会改变判断、防止真实失败时才加流程。
 
 ## 快速示例
 
@@ -101,7 +132,9 @@ flowchart LR
 
 > 帮我写一个高质量 goal，让 Codex 修这个项目，别再跑偏。
 
-**GoalPro 应该输出：**
+**GoalPro 应该输出两段：**
+
+Goal Prompt:
 
 ```markdown
 Goal:
@@ -126,7 +159,41 @@ Stop conditions:
 需要删除数据、发布、处理密钥、改公共接口，或发现多条互斥路线时暂停确认。
 ```
 
-这类输出的重点不是“格式完整”，而是让执行者知道：先读什么、做什么、不做什么、什么时候停、最后拿什么证明。
+Loop Prompt:
+
+```markdown
+Loop mission:
+持续推进“项目恢复到可验证状态”这个目标；每轮基于真实执行结果关闭最高价值差距，直到 Done 或 Pause。
+
+Loop state:
+保留原始意图、当前轮次、已关闭证据、仍未关闭差距、下一轮焦点和暂停风险；不要每轮重新开始。
+
+Previous result to inspect:
+上一轮最终报告、diff、验证输出、失败日志、用户反馈和仍未解决的问题。
+
+Review evidence:
+区分已经通过的结构检查、本地验证、人工验收和没有证据支撑的完成声明。
+
+Gap diagnosis:
+找出用户原始意图仍未满足的差距，按“阻塞交付 > 影响体验 > 表达/整理”排序。
+
+Cycle action:
+本轮只修复仍影响交付级结果的最高价值差距；不要重开已经验证通过的范围。若发现路线错误，先暂停说明原因。
+
+Verification delta:
+补跑或新增能证明剩余差距已关闭的最小验证，并说明上一轮证据与本轮证据的差异。
+
+Loop guardrails:
+最多连续 3 个 LOOP 周期；若连续 2 轮没有减少开放差距、验证仍不可运行、或需要删除/发布/密钥/架构方向决策，则 Pause 请求用户判断。
+
+Continuation protocol:
+每轮结束必须判定 `Done`、`Continue` 或 `Pause`。如果仍有未关闭且值得继续的差距，输出可直接复制到下一轮的 `Next LOOP packet`；如果差距已关闭，报告 Done；如果连续两轮无收敛、验证无法运行或需要用户决策，报告 Pause。
+
+Next LOOP packet:
+包含原始目标、当前轮次、已关闭证据、开放差距、下一轮焦点、要读取的材料、停止条件和本轮新增验证。下一轮 Agent 可以只拿这个 packet 继续。
+```
+
+这类输出的重点不是“格式完整”，而是让执行者知道：先读什么、做什么、不做什么、什么时候停、最后拿什么证明。交付后，你可以使用 LOOP 继续进行进化；每轮把上轮产出的 `Next LOOP packet` 带到下一轮。
 
 ## 快速开始
 
@@ -193,16 +260,18 @@ Skill 名称是 `goalpro`。
 - `先 deep research 再定战略`
 - `这个计划跑偏了，重写 goal`
 - `大改前先给 inventory 和验证计划`
+- `给我一个交付后继续进化用的 LOOP`
 
 ## 使用路径
 
 | 任务 | 方法重点 | 输出 |
 |---|---|---|
-| **模糊需求** | 放大真实意图、定义成败标准 | Goal Contract |
-| **战略任务** | Deep Research、证据地图、反证 | Research-backed Goal Contract |
-| **执行前 goal** | 先读上下文、分片执行、验证 | Codex `/goal` block 或 Claude Code 任务提示词 |
+| **模糊需求** | 放大真实意图、定义成败标准 | Goal Prompt + Loop Prompt |
+| **战略任务** | Deep Research、证据地图、反证 | Research-backed Goal Prompt + Loop Prompt |
+| **执行前 goal** | 先读上下文、分片执行、验证 | Codex `/goal` block 或 Claude Code 任务提示词 + Loop Prompt |
 | **大改/重构** | Inventory、影响面、测试入口 | 分片计划和暂停条件 |
-| **修复跑偏** | 找旧目标错位点、重写边界 | 修正版 Goal Contract |
+| **修复跑偏** | 找旧目标错位点、重写边界 | 修正版 Goal Prompt + Loop Prompt |
+| **交付后进化** | 复盘上一轮结果、定位差距、收敛验证 | Loop Prompt |
 | **验收收尾** | 区分结构检查、本地验证、人工验收 | 最终报告标准 |
 
 ---
@@ -235,10 +304,10 @@ X <a href="https://x.com/KimYx0207">@KimYx0207</a> |
 
 ## 方法架构
 
-GoalPro 的核心不是固定模板，而是一条把意图写成可执行 goal 的主干。它保障 goal 的质量，不替执行者完成 goal。
+GoalPro 的核心不是固定模板，而是一条把意图写成可执行 Goal、再给出交付后 Loop 的主干。它保障提示词质量，不替执行者完成任务。
 
 ```text
-Critical -> Fetch -> Thinking -> Inventory -> Contract -> Review -> Verification
+Critical -> Fetch -> Thinking -> Inventory -> Contract -> Review -> Verification -> Loop
 ```
 
 ### 主干
@@ -252,6 +321,7 @@ Critical -> Fetch -> Thinking -> Inventory -> Contract -> Review -> Verification
 | **Contract** | 如何写成执行者能照着做的契约？ | 补齐目标、边界、暂停条件 |
 | **Review** | 有没有空话、越界、假完成？ | 删掉装饰性流程，保留判断 |
 | **Verification** | 执行者最后要拿什么证明完成？ | 区分未验证、结构检查、本地验证、人工验收 |
+| **Loop** | 执行结果回来后如何继续进化？ | 写清复盘证据、剩余差距、迭代上限和停止条件 |
 
 ### Deep Research 门
 
@@ -262,7 +332,7 @@ flowchart TD
     A["用户请求"] --> B{"是否影响战略 / 外部事实 / 高风险？"}
     B -->|否| C["本地 Fetch<br/>读会改变判断的材料"]
     B -->|是| D["Deep Research<br/>来源 + 反证 + 信心等级"]
-    C --> E["Goal Contract"]
+    C --> E["Goal Prompt + Loop Prompt"]
     D --> F{"证据是否足够？"}
     F -->|足够| E
     F -->|不足| G["Draft Goal / Research Plan"]
@@ -313,7 +383,7 @@ flowchart LR
     style G fill:#fee2e2,stroke:#dc2626,color:#000,stroke-width:2px
 ```
 
-## Goal Contract 字段
+## Goal Prompt / Goal Contract 字段
 
 | 字段 | 作用 | 常见错误 |
 |---|---|---|
@@ -332,6 +402,22 @@ flowchart LR
 | `Stop conditions` | 必须暂停的条件 | 风险出现还继续 |
 | `Final report` | 最后汇报形状 | 大段复述过程 |
 
+## Loop Prompt 字段
+
+| 字段 | 作用 | 常见错误 |
+|---|---|---|
+| `Loop mission` | 说明持续进化使命和最终 Done 条件 | 写成一次性返工目标 |
+| `Loop state` | 保存原始目标、当前轮次、已关闭证据、开放差距和下一轮焦点 | 每轮重新开始 |
+| `Previous result to inspect` | 指定要读取的最终报告、diff、验证、截图、用户反馈等 | 只看聊天结论，不看证据 |
+| `Review evidence` | 区分真实通过、结构检查、人工验收、无证据声明 | 把“说已完成”当完成 |
+| `Gap diagnosis` | 找出原始意图仍未满足的点并排序 | 无限扩范围、重开已完成事项 |
+| `Cycle action` | 规定本轮只处理哪个最高价值差距 | 看到问题就大改 |
+| `Verification delta` | 说明本轮比上一轮多证明了什么 | 重复跑无关测试 |
+| `Loop guardrails` | 规定最大尝试、无收敛阈值、可改范围和人工审查触发 | 持续变成无限自动循环 |
+| `Continuation protocol` | 每轮结束判定 Done / Continue / Pause | 只写“建议继续” |
+| `Stop / escalate conditions` | 规定什么时候必须停下来问用户或升级判断 | 路线错误、权限风险仍继续 |
+| `Next LOOP packet` | 生成下一轮可直接复用的状态包 | 下一轮还靠聊天记忆 |
+
 ## 设计原则
 
 | 原则 | 原因 |
@@ -346,6 +432,9 @@ flowchart LR
 | 表达经济从属 | 只删空话，不删判断、边界、证据和验收 |
 | 验证分层 | 结构检查、本地验证、线上验证、人工验收不是一回事 |
 | Prompt-only 边界 | GoalPro 产出 goal 后停止，执行需要用户另行授权 |
+| Loop 不是执行授权 | Loop Prompt 只供交付后粘贴使用，不能让 GoalPro 当前回合继续执行 |
+| Loop 必须可持续且可停止 | 每轮结束要输出 `Next LOOP packet` 或明确 Done / Pause，同时保留 guardrails，不能只修一轮也不能无限循环 |
+| 进化依赖证据 | 下一轮必须读取上一轮真实结果、验证、用户反馈和 LOOP state，而不是凭感觉重写 |
 | 不增加装饰机制 | agent、hook、eval 只有能防真实失败时才加 |
 
 ---
@@ -378,7 +467,7 @@ docs/images/                      # 联系二维码和收款码
 
 ## 参与贡献
 
-如果你发现 Goal Contract 字段不够清楚、示例不够贴近真实任务，或者某条规则会导致 Agent 过度规划，可以开 Issue 或提交 PR。
+如果你发现 Goal Prompt / Loop Prompt 字段不够清楚、示例不够贴近真实任务，或者某条规则会导致 Agent 过度规划，可以开 Issue 或提交 PR。
 
 贡献时请保持三条边界：
 

@@ -5,14 +5,17 @@
 ## 采用的规则
 
 - Goal 是完成契约，不只是提示词：必须写清结果、限制、done-when 和验证证据。
-- GoalPro 是 goal 提示词生成 Skill，不是执行器：默认只产出可复制 Goal Contract，执行需要用户另行明确授权。
+- GoalPro 是提示词生成 Skill，不是执行器：默认产出可复制 Goal Prompt + Loop Prompt，执行需要用户另行明确授权。
+- Loop Prompt 是交付后的持续进化协议：必须读取上一轮真实结果、验证证据、用户反馈和 loop state，再决定本轮动作、Done / Continue / Pause，并在 Continue 时产出可直接复用的 `Next LOOP packet`；不能授权当前 GoalPro 回合执行。
 - 生成的 Goal 必须可执行：执行者能看出对象、动作、先读材料、范围、非目标、检查点、暂停条件和完成证据。
+- 生成的 Loop 必须可持续且可收敛：后续执行者能看出上一轮要读什么、继承什么状态、本轮修什么、如何证明新增价值、循环预算和无收敛阈值是什么、何时 Done / Continue / Pause、下一轮 LOOP 包怎么生成。
 - 生成的 Goal 必须先过意图对齐质量门：表面请求、真实意图、战略结果、执行策略和验收证据要互相支撑。
 - Skill 的 `description` 是触发表面：只写“何时使用”和“做什么”，不能把次级优化目标写成触发词。
 - 输出位置是用户体验契约：默认聊天窗口给可复制代码块；只有用户明确要求保存或提交时才写文件。
+- 输出形状必须清楚：默认用 `Goal Prompt:` 和 `Loop Prompt:` 两个代码块外标签分别引出两个 fenced `markdown` 代码块，不把标签放进代码块内，不输出 meta prompt rewrite 包装。
 - Skill 正文要短；细节、来源、示例放 `references/`，靠 progressive disclosure 按需加载。
 - 战略任务必须先证据后定论：没有 deep research 的战略只能标为草案。
-- 复杂研究用 orchestrator-workers 思路拆源、拆观点、拆反证；有清晰评价标准时用 evaluator-optimizer 思路反复修正。
+- 复杂研究用 orchestrator-workers 思路拆源、拆观点、拆反证；有清晰评价标准时用 evaluator-optimizer 思路反复修正。Loop Prompt 把这个反复修正封装成可持续的循环协议：每轮执行后都更新 loop state 并产出 `Next LOOP packet`，但不在当前 GoalPro 回合自动运行。
 - 评测要拆开：意图识别、证据质量、路线判断、Goal 可执行性、Prompt-only 停止、执行遵守、最终状态不能混在一起。
 - 开源与社区资料只作为实践信号：GitHub 优先于 X / Reddit；重复出现且能解释真实失败的信号才吸收。
 - Meta_Kim：Critical -> Fetch -> Thinking -> Execution -> Review -> Verification；先取证再定路线；结构检查不能冒充用户目标完成。
@@ -74,17 +77,18 @@
    - `medium`：多来源支持，但缺少本地验证或存在部分反例。
    - `low`：主要来自单个帖子、单个项目、推测或未验证经验。
 8. `输出形态`：
-   - 证据足够：输出 `Research-backed Goal Contract`。
-   - 证据不足但方向清楚：输出 `Draft Goal`，标明缺口。
+   - 证据足够：输出 `Research-backed Goal Prompt + Loop Prompt`。
+   - 证据不足但方向清楚：输出 `Draft Goal + Draft Loop`，标明缺口。
    - 关键证据缺失：输出 `Research Plan`，不要假装已经能定战略。
    - 路线冲突：输出候选路线对比和推荐默认，不直接执行。
-9. `写回 Goal`：Deep Research 结果必须进入 Goal 字段。
+9. `写回 Goal / Loop`：Deep Research 结果必须进入 Goal 或 Loop 字段。
    - 进入 `Decision standard`：改变优先级和取舍。
    - 进入 `Evidence standard`：规定后续还要验证什么。
    - 进入 `Scope / Non-goals`：明确做什么、不做什么。
    - 进入 `Execution policy`：决定直接做、先问、先 inventory 还是暂停。
    - 进入 `Verification`：定义怎么证明完成。
    - 进入 `Stop conditions`：定义哪些风险必须停。
+   - 进入 `Loop Prompt`：定义上一轮要看哪些结果、如何诊断差距、本轮怎么选动作、guardrails 怎么防止失控、如何判定 Done / Continue / Pause、下一轮 LOOP 包怎么生成。
 
 如果研究没有改变成败标准、边界、执行策略或验证方式，就不算 deep research。
 
@@ -104,6 +108,8 @@
 4. `Small step verification`：每个阶段都要有最小相关检查，最后再做完整验证。
 5. `Skill / command / agent boundary`：Skill 放可复用流程；agent 放独立上下文和工具权限；command 放显式触发动作。
 6. `Reload awareness`：运行中的会话可能缓存 skill / agent 定义；修改定义后不能只靠同一会话自测证明新定义生效。
+7. `Evidence-bound loops`：迭代提示词必须绑定上一轮产物、验证失败、用户反馈、loop state 和剩余 delta；不能凭模型主观感觉进入下一轮。
+8. `Next loop packet`：持续循环不能只说“建议继续”，每轮必须产出下一轮可复制输入包，包含原始目标、轮次、已关闭证据、开放差距、下一轮焦点、guardrails 和停止条件。
 
 拒绝吸收的社区信号：
 
@@ -119,16 +125,18 @@
 2. 意图对齐质量门：`Intent`、`Strategic outcome`、`Decision standard`、`Execution policy`、`Verification` 必须解释同一个用户目标。
 3. 反泛化：把项目名、对象名替换后仍然成立的空话，要删掉或补成具体边界。
 4. 可执行性优先：Goal 必须让执行者知道做什么、不做什么、先读什么、如何推进、何时暂停、拿什么验收。
-5. Prompt-only 边界：除非用户明确授权执行、保存、修改或提交，否则输出 Goal Contract 后停止。
-6. 完成度优先：成败标准、关键边界、证据路径和取舍逻辑必须清楚。
-7. 证据优先：战略和外部事实任务必须有来源、反证、信心等级和决策影响。
-8. 表达经济从属：只删空话，不删判断、边界、标准、验证。
-9. 每个关键字段必须能判断合格/不合格。
-10. 输出位置必须可预期：聊天默认、文件显式、文件模式也给聊天代码块。
-11. 上下文读取只列会改变路线或验收的材料。
-12. 验证必须区分：未验证、结构检查、本地验证、线上验证、人工验收。
-13. 不因“看起来完整”增加机制；只为防真实失败加规则。
-14. 社区经验要过来源权重和反证筛选，不能把热闹观点写成标准。
+5. Prompt-only 边界：除非用户明确授权执行、保存、修改或提交，否则输出 Goal Prompt + Loop Prompt 后停止。
+6. Loop-only 边界：Loop Prompt 只用于交付后继续进化，不授权当前回合执行、修复或验证。
+7. 完成度优先：成败标准、关键边界、证据路径和取舍逻辑必须清楚。
+8. 证据优先：战略和外部事实任务必须有来源、反证、信心等级和决策影响。
+9. 进化可持续且可收敛：Loop 必须有上一轮材料、loop state、差距诊断、验证 delta、Loop guardrails、Continuation protocol、Next LOOP packet 和停止条件。
+10. 表达经济从属：只删空话，不删判断、边界、标准、验证。
+11. 每个关键字段必须能判断合格/不合格。
+12. 输出位置必须可预期：聊天默认、文件显式、文件模式也给聊天代码块。
+13. 上下文读取只列会改变路线或验收的材料。
+14. 验证必须区分：未验证、结构检查、本地验证、线上验证、人工验收。
+15. 不因“看起来完整”增加机制；只为防真实失败加规则。
+16. 社区经验要过来源权重和反证筛选，不能把热闹观点写成标准。
 
 ## 来源地图
 
@@ -147,6 +155,10 @@
 - Anthropic skill-creator: https://docs.anthropic.com/en/docs/claude-code/skill-creator
 - Anthropic Building Effective Agents: https://www.anthropic.com/engineering/building-effective-agents
 - Anthropic agent evaluation: https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents
+- OpenAI iterative repair loops: https://developers.openai.com/cookbook/examples/codex/build_iterative_repair_loops_with_codex
+- OpenAI agent improvement loop: https://developers.openai.com/cookbook/examples/agents_sdk/agent_improvement_loop
+- Reflexion paper: https://arxiv.org/abs/2303.11366
+- Self-Refine: https://selfrefine.info/
 - PRISMA 2020: https://www.prisma-statement.org/prisma-2020
 - GRADE approach: https://www.gradeworkinggroup.org/
 - AGENTS.md format: https://github.com/agentsmd/agents.md
@@ -168,9 +180,11 @@
 ## 来源抽象
 
 - OpenAI Codex goal 文档：goal 要像“完成条件”一样写，包含具体结果、可测标准和验证面。
+- OpenAI iterative repair / improvement loop：高质量迭代要把输出、验证失败、剩余 delta、最大尝试、无收敛、人类审查和停止条件闭环；validation feedback 应成为下一轮修复依据。
 - OpenAI / Agent Skills / Claude Skills：Skill 触发主要依赖 frontmatter description；description 必须描述使用场景，不能塞次要目标。
 - OpenAI Deep Research：适合陌生、高风险、证据密集的任务；输出应带引用、来源元数据和中间检索过程。
 - Anthropic agents：复杂研究可拆成多个子问题；有明确评价标准时，应让评估反过来改进结果。
+- Reflexion / Self-Refine：语言反馈和自我修正只有在保留历史、定位问题、给出可操作改进指令、并有停止条件时才有价值。
 - PRISMA / GRADE：高质量研究要说明为什么做、怎么找、证据有多可靠，以及证据如何支持建议强度。
 - GitHub 社区项目：高质量 Skill 倾向于单一职责、可验证退出条件、短正文和按需 references；复杂工作流常见 plan -> implement -> review 或 plan -> diff -> verify。
 - Reddit 真实反馈：用户最常遇到的是上下文污染、计划文件缺失、过度使用 agent/hook/MCP、先改后盘点、验证不连续。
@@ -181,9 +195,13 @@
 
 - “做得更好”但没有用户、目标和验收。
 - `Intent` 只是复述用户原话，没有说明用户真正要改变的局面。
-- Goal Contract 字段齐全，但互相不支撑：战略结果、执行策略和验收证据各说各话。
+- Goal Prompt 字段齐全，但互相不支撑：战略结果、执行策略和验收证据各说各话。
 - 把项目名、对象名替换后仍然成立，说明它只是通用好话。
 - 把“写 goal”误当成“开始执行 goal”。
+- 把“写 loop”误当成“当前回合继续修复或验证”。
+- Loop Prompt 不看上一轮真实结果和 loop state，只泛泛要求“继续优化”。
+- Loop Prompt 只像一次性返工提示词，没有 `Next LOOP packet`，下一轮还要靠聊天记忆。
+- Loop Prompt 没有 Loop guardrails、Done / Continue / Pause 判定、停止条件或人类介入条件。
 - Goal 看起来完整，但执行者不知道先读什么、做哪一片、何时暂停、交付什么证据。
 - 不做 deep research 就给战略结论。
 - 把表达成本写进 `description`，污染触发判断。

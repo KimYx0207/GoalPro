@@ -12,6 +12,7 @@ graphify-out/
 # Claude Code 本机配置和项目级 hooks 不随 Skill 发布
 .claude/settings.json
 .claude/settings.local.json
+.claude/project-task-state.json
 
 # Python 本地运行产物
 __pycache__/
