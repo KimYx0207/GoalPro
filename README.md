@@ -114,7 +114,7 @@ flowchart LR
 | **Goal Prompt** | 给执行者启动本轮任务的可执行提示词，核心是 Goal Contract | 一串漂亮但无法验收的愿景 |
 | **Loop Prompt** | 给执行结果之后使用的持续循环协议，开头给 `时间参数`，每轮产出 `Next LOOP packet` | 当前回合的自动执行授权、一次性返工提示词、后台调度器本身，或无限循环的借口 |
 | **Goal Contract** | Goal Prompt 里的可执行、可验证、可暂停目标说明 | 空泛愿景或待办清单 |
-| **Workflow lens** | 识别持续、自动、发布、运营、监控、队列、复盘类重复工作，并按需写清 Trigger / Checkpoint / Brief | 把所有任务都变成流程图，或强行创建后台自动化 |
+| **Workflow lens** | 生成 Goal Prompt / Loop Prompt 时使用的判断层：识别重复工作，并把必要的 Trigger / Checkpoint / Brief 写进这两段提示词 | 第三个输出、Workflow Prompt、执行器、流程图交付物，或后台自动化 |
 | **Deep Research 门槛** | 战略和外部事实任务的证据前置要求 | 为了显得专业而堆链接 |
 | **Inventory** | 大改前的影响面、调用方、测试入口盘点 | 先重构再补解释 |
 | **表达经济** | 战略完整后的删空话 | 把省字数当核心目标 |
@@ -127,7 +127,7 @@ flowchart LR
 2. **字段互证**：`Intent`、`Strategic outcome`、`Decision standard`、`Execution policy`、`Verification` 必须互相支撑，不能各写各的。
 3. **可执行**：执行者能看出对象、动作、先读什么、做哪一片、不做什么、何时暂停。
 4. **可验收**：验证证据必须对应用户目标，不能用命令通过冒充真实完成；完成后必须展示一个实际样例、案例片段、截图说明或改后输出片段，让用户能判断是否通过。
-5. **Workflow lens**：看到每天、每周、自动、持续、发布、运营、监控、队列、复盘等信号时，先判断是不是重复工作；只有重复工作才补 Trigger、Checkpoint、Brief。
+5. **Workflow lens**：看到每天、每周、自动、持续、发布、运营、监控、队列、复盘等信号时，先判断是不是重复工作；只有重复工作才在 Goal Prompt / Loop Prompt 里补 Trigger、Checkpoint、Brief，不新增第三段输出。
 6. **可进化**：Loop Prompt 必须先给 `时间参数`，再要求读取上一轮真实结果和证据，指出剩余差距，给出 Done / Continue / Pause 判断，在 Continue 时输出 `Next LOOP packet`，并用 guardrails 防止无限循环。
 7. **不过度**：小任务不强行 deep research、inventory、workflow lens 或 eval；只有会改变判断、防止真实失败时才加流程。
 
@@ -313,7 +313,7 @@ X <a href="https://x.com/KimYx0207">@KimYx0207</a> |
 
 ## 方法架构
 
-GoalPro 的核心不是固定模板，而是一条把意图写成可执行 Goal、再给出交付后 Loop 的主干。它保障提示词质量，不替执行者完成任务。遇到持续、自动、发布、运营、监控、队列、复盘类请求时，先用 workflow lens 判断这件事是不是值得长期跑。
+GoalPro 的核心不是固定模板，而是一条把意图写成可执行 Goal Prompt、再给出交付后 Loop Prompt 的主干。它保障提示词质量，不替执行者完成任务。遇到持续、自动、发布、运营、监控、队列、复盘类请求时，先用 workflow lens 判断哪些信息应该写进这两段提示词；workflow lens 自己不成为第三个交付物。
 
 ```text
 Critical -> Fetch -> Thinking -> Workflow lens -> Inventory -> Contract -> Review -> Verification -> Loop
@@ -326,7 +326,7 @@ Critical -> Fetch -> Thinking -> Workflow lens -> Inventory -> Contract -> Revie
 | **Critical** | 用户真正要改变什么？ | 回到意图，不直接执行表面请求 |
 | **Fetch** | 哪些材料会改变判断？ | 先读本地上下文或外部来源 |
 | **Thinking** | 哪条路线最能赢？ | 比较取舍，标出反证和未知 |
-| **Workflow lens** | 这是一件一次性任务，还是可委托的重复工作？ | 重复工作才补 Trigger、Checkpoint、Brief；一次性任务不加流程包袱 |
+| **Workflow lens** | 这是一件一次性任务，还是可委托的重复工作？ | 重复工作才把 Trigger、Checkpoint、Brief 写进 Goal Prompt / Loop Prompt；一次性任务不加流程包袱 |
 | **Inventory** | 执行者需要先知道哪些影响面和验证入口？ | 大改前把盘点要求写进 goal |
 | **Contract** | 如何写成执行者能照着做的契约？ | 补齐目标、边界、暂停条件 |
 | **Review** | 有没有空话、越界、假完成？ | 删掉装饰性流程，保留判断 |
@@ -402,7 +402,7 @@ flowchart LR
 | `Strategic outcome` | 完成后局面发生什么变化 | 只写交付物 |
 | `Decision standard` | 路线判断、优先级、失败条件 | “高质量”但不可判 |
 | `Evidence standard` | 来源、验证、反证、信心等级 | 搜到资料就算完成 |
-| `Workflow lens` | 可选；重复工作时写清 Trigger、Checkpoint、Brief 和 source of truth | 给所有任务都塞工作流字段 |
+| `Workflow lens` | 可选；作为 Goal Prompt 内的判断说明，重复工作时写清 Trigger、Checkpoint、Brief 和 source of truth | 给所有任务都塞工作流字段，或输出第三个 Workflow Prompt |
 | `Scope` | 本轮包含什么 | 塞未来计划 |
 | `Non-goals` | 本轮不做什么 | 写“无”但任务很宽 |
 | `Context to read first` | 先读哪些会改变判断的材料 | 全仓库漫游 |
@@ -420,7 +420,7 @@ flowchart LR
 | `Loop mission` | 说明持续进化使命和最终 Done 条件 | 写成一次性返工目标 |
 | `Loop state` | 保存原始目标、当前轮次、已关闭证据、开放差距和下一轮焦点 | 每轮重新开始 |
 | `时间参数` | 放在 Loop Prompt 最前面，让用户填写下一轮何时继续，如手动、每天 09:00、每次部署后 | 只写 Continue，不给时间入口；把填写时间冒充已创建后台任务 |
-| `Trigger / Checkpoint / Brief` | 可选；重复 workflow 中说明何时触发、何处人工确认、给用户看什么决策摘要 | 把原始草稿、日志或长 diff 直接丢给用户 |
+| `Trigger / Checkpoint / Brief` | 可选；作为 Loop Prompt 字段，说明重复 workflow 何时触发、何处人工确认、给用户看什么决策摘要 | 把它们当成第三段交付，或把原始草稿、日志、长 diff 直接丢给用户 |
 | `Previous result to inspect` | 指定要读取的最终报告、diff、验证、截图、用户反馈等 | 只看聊天结论，不看证据 |
 | `Review evidence` | 区分真实通过、结构检查、人工验收、无证据声明 | 把“说已完成”当完成 |
 | `Gap diagnosis` | 找出原始意图仍未满足的点并排序 | 无限扩范围、重开已完成事项 |
@@ -446,10 +446,11 @@ flowchart LR
 | 验证分层 | 结构检查、本地验证、线上验证、人工验收不是一回事 |
 | 完成后给样例 | 改完必须给用户看实际样例/案例片段，否则用户无法判断是否通过 |
 | Prompt-only 边界 | GoalPro 产出 goal 后停止，执行需要用户另行授权 |
+| 输出永远是两段提示词 | 默认只交付 `Goal Prompt` 和 `Loop Prompt`；workflow lens、inventory、deep research 都只是生成这两段提示词的判断规则 |
 | Loop 不是执行授权 | Loop Prompt 只供交付后粘贴使用，不能让 GoalPro 当前回合继续执行 |
 | Loop 有时间入口 | 开头先给 `时间参数`；定时/后台执行属于自动化设置，需要显式授权 |
 | Loop 必须可持续且可停止 | 每轮结束要输出 `Next LOOP packet` 或明确 Done / Pause，同时保留 guardrails，不能只修一轮也不能无限循环 |
-| Workflow 按需启用 | 先判断是否是重复工作；是才写 Trigger、Checkpoint、Brief，不是就别加 |
+| Workflow 按需启用 | 先判断是否是重复工作；是才把 Trigger、Checkpoint、Brief 写进 Goal / Loop，不是就别加 |
 | 少问但问准 | 只问会改变路线的阻塞问题，并给推荐答案；能读上下文解决的问题先读 |
 | 进化依赖证据 | 下一轮必须读取上一轮真实结果、验证、用户反馈和 LOOP state，而不是凭感觉重写 |
 | 不增加装饰机制 | agent、hook、eval 只有能防真实失败时才加 |

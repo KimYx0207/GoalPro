@@ -18,7 +18,7 @@ GoalPro 的交付物是可复制的提示词，不是任务执行结果。默认
 - `Execution`：用户要给 agent 一份按 goal 开始做的执行提示词。
 - `Repair`：之前输出跑偏、太粗糙、太复杂、问太多、假完成。
 - `Governed`：高风险、多文件、发布、外部事实、生产相邻或会影响真实用户的任务。
-- `Workflow`：用户提到每天、每周、自动、持续、发布、运营、监控、队列、复盘等重复性工作时，先判断这件事是否值得变成可委托流程。
+- `Workflow`：用户提到每天、每周、自动、持续、发布、运营、监控、队列、复盘等重复性工作时，先判断哪些 Trigger / Checkpoint / Brief 信息应写进 Goal Prompt / Loop Prompt。
 
 用能诚实验收的最轻模式；但战略性任务必须先过证据门槛。
 
@@ -26,6 +26,7 @@ GoalPro 的交付物是可复制的提示词，不是任务执行结果。默认
 
 - Skill mention 不等于执行授权。用户只说 `goalpro`、`写 goal`、`优化提示词`、`帮我做个目标` 时，只生成可复制的 goal 提示词。
 - 新版默认生成两段提示词：`Goal Prompt` 和 `Loop Prompt`。Loop 只是交付后可粘贴的继续进化提示词，不授权当前回合执行。
+- Workflow lens 不改变输出形态：默认仍然只输出 `Goal Prompt` 和 `Loop Prompt`，不新增第三个 `Workflow Prompt`，不把 GoalPro 变成执行器或自动化平台。
 - Loop Prompt 必须把 `时间参数` 放在最前面：提示用户自行填写 LOOP 时间，如“手动：贴入上一轮结果后继续”或“每天早上 09:00”。
 - 定时/自动 Loop 只是自动化设置说明，除非用户明确授权创建或修改自动化；写了时间不等于已经创建后台任务。
 - 生成的 goal 必须能指导后续执行者：对象、动作、上下文、范围、非目标、检查点、暂停条件和验收证据都要清楚。
@@ -51,12 +52,12 @@ GoalPro 的交付物是可复制的提示词，不是任务执行结果。默认
 
 - 触发信号：每天、每周、自动、持续、发布、运营、监控、队列、复盘、提醒、审核、同步、巡检、内容日历。
 - 先判断这是不是一个可委托的重复模式：是否有稳定输入、触发时机、执行步骤、人工确认点、输出记录和复盘证据。
-- 如果是重复 workflow，在 Goal 的 `Decision standard` / `Execution policy` 或可选 `Workflow lens` 段里写清：Trigger、Checkpoint、Brief、source of truth、非目标。
+- 如果是重复 workflow，只把必要信息写进 `Goal Prompt` 和 `Loop Prompt`：在 Goal 的 `Decision standard` / `Execution policy` 或可选 `Workflow lens` 段里写清判断，在 Loop 里写清 Trigger、Checkpoint、Brief、source of truth、非目标。
 - `Trigger` 说明每轮何时开始：事件触发通常优先于固定时间；固定时间只是时间参数，不等于已创建后台任务。
 - `Checkpoint` 要尽量后移：先让执行者把材料准备好，再让用户确认一次关键判断，而不是开头问一串问题。
 - `Brief` 是给用户看的决策摘要：做了什么、为什么、证据在哪、推荐动作是什么；不要把原始草稿或日志直接丢给用户审。
 - 如果需要问用户，最多问一个会改变路线的阻塞问题，并附推荐答案，例如“我建议默认走人工确认发布，因为官方发布能力未确认；你同意吗？”
-- 不强制 AI、不强制定时、不强制 checkpoint；只有 workflow 真的需要时才写。
+- 不强制 AI、不强制定时、不强制 checkpoint；只有 workflow 真的需要时才写，且不单独输出第三段 workflow 交付物。
 
 ## Deep Research 门槛
 
@@ -99,7 +100,7 @@ Evidence Map:
 1. Critical：先指出用户真正不满、要推进的局面、最大误伤点。
 2. Fetch：只读取会改变战略、边界、验收或执行路线的材料；战略任务先做 deep research。
 3. Thinking：比较路线，写清取舍；把反例、未知和信心等级放进判断。
-4. Workflow lens：如果请求是重复性工作，先判断它配不配变成 workflow；需要时补 Trigger、Checkpoint、Brief 和 source of truth。
+4. Workflow lens：如果请求是重复性工作，先判断它配不配变成 workflow；需要时把 Trigger、Checkpoint、Brief 和 source of truth 写进 Goal Prompt / Loop Prompt。
 5. Inventory：涉及代码库、文档库或复杂系统时，先列会受影响的文件、调用方、测试和验证入口，再允许执行。
 6. Contract：写 Goal Prompt，让执行者知道做什么、不做什么、先读什么、何时停。
 7. Review：用成败标准反查合同，删掉装饰性流程，保留关键判断。
@@ -124,7 +125,7 @@ Evidence Map:
 
 ## 字段标准
 
-默认输出两个 fenced `markdown` 代码块：先 `Goal Prompt`，再 `Loop Prompt`。每个代码块前必须有代码块外的可见标签 `Goal Prompt:` / `Loop Prompt:`；标签不能放进 fenced block 内，不要只靠字段名暗示；不要把两个提示词合并到同一个代码块里。如果用户只明确要求 LOOP，则只输出 Loop Prompt，并要求用户贴入上一轮结果或 `Next LOOP packet`。
+默认输出两个 fenced `markdown` 代码块：先 `Goal Prompt`，再 `Loop Prompt`。每个代码块前必须有代码块外的可见标签 `Goal Prompt:` / `Loop Prompt:`；标签不能放进 fenced block 内，不要只靠字段名暗示；不要把两个提示词合并到同一个代码块里，也不要新增第三个 `Workflow Prompt`。如果用户只明确要求 LOOP，则只输出 Loop Prompt，并要求用户贴入上一轮结果或 `Next LOOP packet`。
 
 不要输出 `原始输入 / 优化后的理解 / 优化后的完整提示词` 这类 meta prompt rewrite 包装，除非用户明确要求做 meta-theory 改写；GoalPro 的默认正文就是可复制的 Goal Prompt + Loop Prompt。
 
@@ -171,7 +172,7 @@ Next LOOP packet:
 | `Strategic outcome` | 最终战略结果 | 能解释为什么这次工作值得做 | 只写交付物 |
 | `Decision standard` | 路线判断标准 | 明确优先级、取舍和失败条件 | “高质量”但不可判 |
 | `Evidence standard` | 证据要求 | 区分来源、验证、人工验收和信心等级 | 搜到资料就算完成 |
-| `Workflow lens` | 可选，重复工作判断 | 只在持续/自动/运营/发布等重复任务中写清 Trigger、Checkpoint、Brief、source of truth | 给所有任务都加流程 |
+| `Workflow lens` | 可选，重复工作判断 | 只作为 Goal Prompt 内的判断说明；持续/自动/运营/发布等重复任务才写清 Trigger、Checkpoint、Brief、source of truth | 给所有任务都加流程，或输出第三个 Workflow Prompt |
 | `Scope` | 本次包含什么 | 只列本轮工作 | 塞未来计划 |
 | `Non-goals` | 本次不做什么 | 防止越界 | 写“无”但任务很宽 |
 | `Context to read first` | 先读材料 | 只列会改变判断的材料 | 全仓库漫游 |
@@ -187,7 +188,7 @@ Next LOOP packet:
 | `时间参数` | 下一轮何时继续 | 放在 Loop Prompt 最前面，提示用户填写“手动：贴入上一轮结果后继续”或“每天早上 09:00”；若要真实后台运行，说明需另行创建 automation | 把时间入口藏到后面；写了时间就假装已自动运行 |
 | `Loop mission` | 持续进化使命 | 绑定原始意图、目标质量线和可持续循环，不只描述下一轮 | 写成一次性返工目标 |
 | `Loop state` | 跨轮继承状态 | 保留原始目标、当前轮次、已关闭证据、开放差距、下一轮焦点 | 每轮重新开始 |
-| `Trigger / Checkpoint / Brief` | 可选，workflow 继续规则 | 重复流程里写清触发时机、人工确认点和给用户看的决策摘要 | 把原始输出、日志或草稿直接丢给用户 |
+| `Trigger / Checkpoint / Brief` | 可选，workflow 继续规则 | 只作为 Loop Prompt 字段；重复流程里写清触发时机、人工确认点和给用户看的决策摘要 | 把它当成第三段交付，或把原始输出、日志、草稿直接丢给用户 |
 | `Previous result to inspect` | 必须读取的上一轮材料 | 最终报告、diff、验证、截图、用户反馈、失败日志按需列出 | 只看聊天结论 |
 | `Review evidence` | 证据复盘规则 | 区分真实通过、结构检查、人工验收和无证据声明 | 把“说完成”当完成 |
 | `Gap diagnosis` | 剩余差距 | 按交付阻塞、体验影响、表达整理排序 | 无限扩范围 |
@@ -217,7 +218,7 @@ Next LOOP packet:
 - Claude Code 执行场景：给任务提示词，包含先读材料、执行策略、验证和暂停条件；另给交付后的 `Loop Prompt`。
 - 大改/重构场景：先输出 inventory、影响面、分片计划、每片验证；不得先重构再补解释。
 - Repair 场景：先指出旧目标哪里错，再给修正版和防跑偏检查。
-- Workflow 场景：如果用户请求是重复性工作，输出 Goal + Loop 时补充 workflow lens；若需要确认路线，只问一个阻塞问题并给推荐答案。
+- Workflow 场景：如果用户请求是重复性工作，输出仍然是 Goal Prompt + Loop Prompt；只在这两段提示词里补充 workflow lens、Trigger、Checkpoint、Brief。若需要确认路线，只问一个阻塞问题并给推荐答案。
 - Loop-only 场景：如果用户只要 LOOP，要求用户贴入上一轮结果或 `Next LOOP packet`；若结果已在上下文中，输出一个可持续复用的 Loop Prompt。
 - 自动化 Loop 场景：如果用户明确说自动、定时、每天、每周、持续监控或后台运行，先在 `时间参数` 中给可填写示例，再输出简短自动化设置说明；除非用户授权创建或修改自动化，否则不实际创建。
 
@@ -229,7 +230,7 @@ Next LOOP packet:
 - 对齐：`Intent`、`Strategic outcome`、`Decision standard`、`Execution policy`、`Verification` 能解释为什么这个 goal 符合用户意图。
 - 反泛化：把项目名、对象名替换后仍然成立的空话已经删掉或补成具体边界。
 - 可执行：执行者能看出对象、动作、先读材料、推进顺序、暂停条件和验收证据。
-- Workflow：只有重复性工作才启用 workflow lens；启用时能看出 Trigger、Checkpoint、Brief、source of truth 和不该自动化的边界。
+- Workflow：只有重复性工作才启用 workflow lens；启用时能看出 Trigger、Checkpoint、Brief、source of truth 和不该自动化的边界，但输出形态仍是 Goal Prompt + Loop Prompt。
 - Loop：Loop Prompt 开头有可填写 `时间参数`，并能看出上一轮结果要读什么、如何找差距、本轮做什么、何时 Done / Continue / Pause、下一轮 `Next LOOP packet` 如何生成。
 - 战略：说明结果价值、成败标准、证据标准和关键取舍。
 - Deep Research：战略或外部事实任务有来源、反证、信心等级和决策影响。

@@ -13,7 +13,8 @@
 - 生成的 Goal 必须可执行：执行者能看出对象、动作、先读材料、范围、非目标、检查点、暂停条件和完成证据。
 - 生成的 Loop 必须可持续且可收敛：后续执行者能看出时间参数怎么填、上一轮要读什么、继承什么状态、本轮修什么、如何证明新增价值、循环预算和无收敛阈值是什么、何时 Done / Continue / Pause、下一轮 LOOP 包怎么生成。
 - Workflow lens 只在重复性工作中启用：用户提到每天、每周、自动、持续、运营、发布、监控、队列、复盘、审核、同步等信号时，先判断它是不是可委托 workflow；不是重复工作就不要强行流程化。
-- 重复 workflow 要写清 Trigger、Checkpoint、Brief 和 source of truth：什么时候开始、在哪里让人确认、给用户看什么决策摘要、以哪个状态表/文件/系统为准。
+- Workflow lens 不改变输出形态：默认交付永远是 `Goal Prompt` + `Loop Prompt` 两段提示词；不要新增 `Workflow Prompt`，不要把 GoalPro 写成执行器、调度器或流程图交付工具。
+- 重复 workflow 要把 Trigger、Checkpoint、Brief 和 source of truth 写进 Goal / Loop：什么时候开始、在哪里让人确认、给用户看什么决策摘要、以哪个状态表/文件/系统为准。
 - 提问要少但要准：如果不同路线会改变风险、权限、范围或验收，最多问一个阻塞问题，并给推荐答案；能通过读取上下文解决的问题，先读上下文。
 - 生成的 Goal 必须先过意图对齐质量门：表面请求、真实意图、战略结果、执行策略和验收证据要互相支撑。
 - Skill 的 `description` 是触发表面：只写“何时使用”和“做什么”，不能把次级优化目标写成触发词。
@@ -118,7 +119,7 @@
 7. `Evidence-bound loops`：迭代提示词必须绑定上一轮产物、验证失败、用户反馈、loop state 和剩余 delta；不能凭模型主观感觉进入下一轮。
 8. `Time-parameter-first loops`：持续循环必须先给可填写的时间参数；定时或后台运行属于自动化设置，不能由提示词本身隐式产生。
 9. `Next loop packet`：持续循环不能只说“建议继续”，每轮必须产出下一轮可复制输入包，包含原始目标、轮次、已关闭证据、开放差距、时间参数、下一轮焦点、guardrails 和停止条件。
-10. `Workflow lens`：持续、自动、发布、运营、监控、队列、复盘类请求先判断是否是重复工作；只有重复工作才写 Trigger / Checkpoint / Brief。
+10. `Workflow lens`：持续、自动、发布、运营、监控、队列、复盘类请求先判断是否是重复工作；只有重复工作才把 Trigger / Checkpoint / Brief 写进 Goal Prompt / Loop Prompt。
 11. `One question with recommended answer`：阻塞问题一次只问一个，并附推荐答案；不要把产品判断负担成串丢给用户。
 
 `Workflow lens` 字段建议：
@@ -148,7 +149,7 @@
 7. 完成度优先：成败标准、关键边界、证据路径和取舍逻辑必须清楚。
 8. 证据优先：战略和外部事实任务必须有来源、反证、信心等级和决策影响。
 9. 进化可持续且可收敛：Loop 必须有前置时间参数、上一轮材料、loop state、差距诊断、验证 delta、Loop guardrails、Continuation protocol、Next LOOP packet 和停止条件。
-10. Workflow lens 从属：只在重复性工作中引入 Trigger、Checkpoint、Brief；一次性任务不要背工作流包袱。
+10. Workflow lens 从属：只在重复性工作中把 Trigger、Checkpoint、Brief 写进 Goal Prompt / Loop Prompt；一次性任务不要背工作流包袱，任何任务都不要新增第三段 Workflow Prompt。
 11. 推荐答案优先：不得把可推断的路线选择全丢给用户；阻塞问题要给推荐默认。
 12. 表达经济从属：只删空话，不删判断、边界、标准、验证。
 13. 每个关键字段必须能判断合格/不合格。
@@ -211,7 +212,7 @@
 - Reflexion / Self-Refine：语言反馈和自我修正只有在保留历史、定位问题、给出可操作改进指令、并有停止条件时才有价值。
 - PRISMA / GRADE：高质量研究要说明为什么做、怎么找、证据有多可靠，以及证据如何支持建议强度。
 - GitHub 社区项目：高质量 Skill 倾向于单一职责、可验证退出条件、短正文和按需 references；复杂工作流常见 plan -> implement -> review 或 plan -> diff -> verify。
-- mattpocock loop-me / grilling：loop 是可重复、值得委托的活动；workflow 是 loop 的规格；问询一次只问一个问题且附推荐答案；Trigger、Checkpoint、Brief 只在 workflow 需要时出现，不应变成所有任务的固定清单。
+- mattpocock loop-me / grilling：loop 是可重复、值得委托的活动；workflow 是 loop 的规格；问询一次只问一个问题且附推荐答案；Trigger、Checkpoint、Brief 只在 workflow 需要时出现，并且只服务 Goal Prompt / Loop Prompt，不应变成第三个输出。
 - Reddit 真实反馈：用户最常遇到的是上下文污染、计划文件缺失、过度使用 agent/hook/MCP、先改后盘点、验证不连续。
 - X 实践信号：新工作流常把计划、diff、验证、最小测试和隔离上下文当作短循环，但这些只能作为候选模式，必须交叉验证。
 - Meta_Kim：Critical/Fetch/Thinking/Review 是路线约束；没有 Fetch 的战略判断不能假装完成。
@@ -227,6 +228,7 @@
 - Loop Prompt 不看上一轮真实结果和 loop state，只泛泛要求“继续优化”。
 - Loop Prompt 只写 Continue / Next，却不给用户可填写的时间参数。
 - 把时间参数当成已经创建的后台自动化，没有调度器、频率、时区、输入来源、权限和暂停规则。
+- 把 workflow lens 当成第三个交付物，输出 `Workflow Prompt`、流程图或执行计划，反而弱化了 Goal Prompt + Loop Prompt。
 - 把所有任务都当 workflow，给一次性任务硬塞 Trigger、Checkpoint、Brief。
 - 问用户一串开放问题，却不给推荐答案；或者明明能读上下文解决，仍把问题甩给用户。
 - Checkpoint 太早，用户还没看到准备好的材料就被迫做判断。

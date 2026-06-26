@@ -1,5 +1,23 @@
 # Changelog
 
+## v0.1.3 - 2026-06-26
+
+Clarifies that GoalPro's deliverable is always two copyable instruction prompts: `Goal Prompt` and `Loop Prompt`.
+
+### Changed
+
+- Reframe `Workflow lens` as a judgment layer used while generating the two prompts, not as a third output, workflow prompt, executor, scheduler, or flowchart deliverable.
+- Make repeated-work guidance write Trigger, Checkpoint, Brief, and source-of-truth details into `Goal Prompt` / `Loop Prompt` only when they help the two-prompt contract.
+- Update the website and Xiaohongshu examples so they explicitly start from the two-prompt output shape.
+- Mirror the clarification across `.agents` and `.claude`.
+
+### Verification
+
+- `git diff --check` passed with only LF-to-CRLF warnings.
+- `.agents` and `.claude` GoalPro skill mirrors have matching SHA256 hashes for `SKILL.md`, `references/source-rules.md`, and `references/examples.md`.
+- Key dual-prompt boundary phrases were checked with `rg`, including `Goal Prompt + Loop Prompt`, `第三个 Workflow Prompt`, and `两段指令提示词`.
+- `graphify update .` completed after the wording correction.
+
 ## v0.1.2 - 2026-06-26
 
 Adds a workflow lens to GoalPro so repeated automation-style requests become safer, clearer Goal + Loop contracts without turning every task into a workflow.
