@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+- Synchronize the accepted conditional-Loop direction and Issue #1 evidence governance with the Kim_Service integration: finite requests produce Goal Prompt only, with Loop reserved for explicit iteration or new post-delivery evidence.
+- Separate user-stated intent, AI inference, and unconfirmed value judgments; distinguish Goal / Plan / Output and require proxy coverage gaps, confidence, counterevidence, and long-term Revalidation trigger.
+- Update examples and both host mirrors together; add deterministic regression checks for finite delivery, eligible loops, evidence boundaries, and mirror equality.
+- Preserve the migration notice: Kim Service remains the distribution source. This source correction does not publish a separate GoalPro version or change release tags.
+
 ## v0.1.3 - 2026-06-26
 
 Clarifies that GoalPro's deliverable is always two copyable instruction prompts: `Goal Prompt` and `Loop Prompt`.
